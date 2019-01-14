@@ -18,16 +18,23 @@ class Node {
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
-        this.radios = 20;
+        this.radius = 20;
     }
 
     getPortPosition(slot) {
         // var add_angle = [0, Math.PI * 2 / 3, Math.PI * 4 / 3][slot];
-        var add_angle = [0, getRadianFromAngle(120), getRadianFromAngle(240)][slot];
-        var position = add([this.position.x, this.position.y], rotate([this.radios, 0], this.angle + add_angle));
+        var add_angle = [0, getRadianFromAngle(240), getRadianFromAngle(120)][slot];
+        var position = add([this.position.x, this.position.y], rotate([this.radius, 0], this.angle + add_angle));
         return {x: position[0], y: position[1]};
     }
     
+}
+
+class InitialNode {
+    constructor(position, radius) {
+        this.position = position;
+        this.radius = radius;
+    }
 }
 
 // Auxiliar to render position
@@ -37,16 +44,18 @@ const width = 400;
 // Nodes
 var nodes = [];
 
+var initialNode = new InitialNode({x: width * 0.47, y: height * 0.05}, 5)
+
 var node0 = new Node(0, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
 nodes.push(node0);
 
 var node1 = new Node(0, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
 nodes.push(node1);
 
-var node2 = new Node(1, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
+var node2 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
 nodes.push(node2);
 
-var node3 = new Node(0, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
+var node3 = new Node(1, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
 nodes.push(node3);
 
 var node4 = new Node(0, {x: width * 0.40, y: height * 0.60}, getRadianFromAngle(90));
@@ -63,13 +72,14 @@ window.onload = function(){
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
-        for (node of nodes) {     
+        for (node of nodes) {    
+            
             drawTriangle(context, node); 
             setLines(context); 
             if (node.type == 1) {
                 context.strokeStyle = 'blue';
             } else {
-                context.strokeStyle = 'black';
+                context.strokeStyle = 'black'; 
             }
         };
     }, 1000/30);
@@ -78,7 +88,8 @@ window.onload = function(){
 
 function setInitialNode(context) {
     context.beginPath();
-    context.arc(width * 0.47, height * 0.05, 5, 0, 2 * Math.PI);
+    context.arc(initialNode.position.x, initialNode.position.y, initialNode.radius, 0, 2 * Math.PI);
+    context.fill();
     context.stroke();
 }
 
@@ -104,11 +115,26 @@ function setLines(context) {
     // bezierCurveTo: 
         // Control point 1 (first two numbers), Control point 2 (second two numbers) and end point (last two numbers)
 
-    // Node 0 to 1   
+    // Initial node to Node 0 (1)
+    context.beginPath();
+    context.moveTo(initialNode.position.x, initialNode.position.y);
+    context.lineTo(nodes[0].getPortPosition(2).x, nodes[0].getPortPosition(2).y)
+    context.stroke();
+
+    // Node 0 (0) to Node 1 (0)   
     context.beginPath();
     context.moveTo(nodes[0].getPortPosition(0).x, nodes[0].getPortPosition(0).y);
     context.bezierCurveTo(nodes[0].position.x, nodes[0].position.y + 50, 
                           nodes[1].position.x, nodes[1].position.y - 50, 
                           nodes[1].getPortPosition(0).x, nodes[1].getPortPosition(0).y);
     context.stroke();
+
+    // Node 1 (1) to Node 2 (0)   
+    context.beginPath();
+    context.moveTo(nodes[1].getPortPosition(1).x, nodes[1].getPortPosition(1).y);
+    context.bezierCurveTo(nodes[1].position.x, nodes[1].position.y + 30, 
+                          nodes[2].position.x, nodes[1].position.y - 30, 
+                          nodes[2].getPortPosition(0).x, nodes[2].getPortPosition(0).y);
+    context.stroke();
+
 }
