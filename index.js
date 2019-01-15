@@ -25,8 +25,6 @@ var nodeSelected = null;
 var nodes = makeNodes();
 var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
 
-console.log(">>> Initial node: "+initialNode.getPortPosition(0).x);
-
 window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
@@ -148,7 +146,7 @@ function setInitialNode(context) {
     context.stroke();
 }
 
-// Draw the shape of a triangle according to it's ports
+// Draw the shape of a triangle according to it's ports and it's connections
 function drawTriangle(context, node) {
     context.beginPath();
     // Port 0 to 1
@@ -185,74 +183,4 @@ function drawTriangle(context, node) {
         context.lineTo(portPosition.x, portPosition.y) ;
         context.stroke(); 
     }
-}
-
-// Draw all lines conecting the triangles
-function setLines(context) {
-    // bezierCurveTo: 
-        // Control point 1 (first two numbers), Control point 2 (second two numbers) and end point (last two numbers)
-    
-    // Initial node to Node 0 (1)
-    context.beginPath();
-    context.moveTo(initialNode.position.x, initialNode.position.y);
-    context.lineTo(nodes[0].getPortPosition(2).x, nodes[0].getPortPosition(2).y)
-    context.stroke();
-
-    // Node 0 (0) to Node 1 (0)   
-    context.beginPath();
-    context.moveTo(nodes[0].getPortPosition(0).x, nodes[0].getPortPosition(0).y);
-    context.bezierCurveTo(nodes[0].position.x, nodes[0].position.y + 50, 
-                          nodes[1].position.x, nodes[1].position.y - 50, 
-                          nodes[1].getPortPosition(0).x, nodes[1].getPortPosition(0).y);
-    context.stroke();
-
-    // Node 1 (1) to Node 2 (0)   
-    context.beginPath();
-    context.moveTo(nodes[1].getPortPosition(1).x, nodes[1].getPortPosition(1).y);
-    context.bezierCurveTo(nodes[1].getPortPosition(1).x, nodes[1].getPortPosition(1).y + 30, 
-                          nodes[2].position.x, nodes[2].position.y - 30, 
-                          nodes[2].getPortPosition(0).x, nodes[2].getPortPosition(0).y);
-    context.stroke();
-
-    // Node 1 (2) to Node 3 (0)   
-    context.beginPath();
-    context.moveTo(nodes[1].getPortPosition(2).x, nodes[1].getPortPosition(2).y);
-    context.bezierCurveTo(nodes[1].getPortPosition(2).x - 10, nodes[1].getPortPosition(2).y + 30,  
-                          nodes[3].getPortPosition(2).x, nodes[3].getPortPosition(2).y - 10, 
-                          nodes[3].getPortPosition(2).x, nodes[3].getPortPosition(2).y);
-    context.stroke();
-
-    // Node 0 (1) to Node 4 (0)   
-    context.beginPath();
-    context.moveTo(nodes[0].getPortPosition(1).x, nodes[0].getPortPosition(1).y);
-    context.bezierCurveTo(nodes[0].getPortPosition(1).x, nodes[0].getPortPosition(1).y - 50,  
-                          nodes[0].getPortPosition(1).x + 60, nodes[0].getPortPosition(1).y - 50, 
-                          nodes[4].getPortPosition(0).x, nodes[4].getPortPosition(0).y);
-    context.stroke();
-
-    // Node 2 (1) to Node 3 (0)   
-    context.beginPath();
-    context.moveTo(nodes[2].getPortPosition(1).x, nodes[2].getPortPosition(1).y);
-    context.bezierCurveTo(nodes[2].getPortPosition(1).x, nodes[2].getPortPosition(1).y + 50,  
-                          nodes[3].getPortPosition(0).x, nodes[3].getPortPosition(0).y + 50, 
-                          nodes[3].getPortPosition(0).x, nodes[3].getPortPosition(0).y);
-    context.stroke();    
-
-    // Node 2 (2) to Node 3 (1)   
-    context.beginPath();
-    context.moveTo(nodes[2].getPortPosition(2).x, nodes[2].getPortPosition(2).y);
-    context.bezierCurveTo(nodes[2].getPortPosition(2).x, nodes[2].getPortPosition(2).y + 70,  
-                          nodes[3].getPortPosition(1).x + 30, nodes[3].getPortPosition(1).y + 70, 
-                          nodes[3].getPortPosition(1).x, nodes[3].getPortPosition(1).y);
-    context.stroke(); 
-
-    // Node 4 (1) to Node 4 (2)   
-    context.beginPath();
-    context.moveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y);
-    context.bezierCurveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y + 20,  
-                          nodes[4].getPortPosition(2).x, nodes[4].getPortPosition(2).y + 20, 
-                          nodes[4].getPortPosition(2).x, nodes[4].getPortPosition(2).y);
-    context.stroke(); 
-
-
 }
