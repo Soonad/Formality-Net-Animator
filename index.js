@@ -76,6 +76,17 @@ window.onload = function(){
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
+
+        // for (var i = 0; i < nodes.length; i++) {
+        //     drawTriangle(context, nodes[i]); 
+            
+        //     if (nodes[i + 1].type === 1) {
+        //         context.strokeStyle = 'blue';
+        //     } else {
+        //         context.strokeStyle = 'black'; 
+        //     }
+
+        // };
         for (node of nodes) {    
             
             drawTriangle(context, node); 
@@ -124,7 +135,6 @@ function drawTriangle(context, node) {
 function setLines(context) {
     // bezierCurveTo: 
         // Control point 1 (first two numbers), Control point 2 (second two numbers) and end point (last two numbers)
-    // context.strokeStyle = 'black'; 
     
     // Initial node to Node 0 (1)
     context.beginPath();
@@ -180,7 +190,7 @@ function setLines(context) {
                           nodes[3].getPortPosition(1).x, nodes[3].getPortPosition(1).y);
     context.stroke(); 
 
-    // Node 3 (1) to Node 3 (2)   
+    // Node 4 (1) to Node 4 (2)   
     context.beginPath();
     context.moveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y);
     context.bezierCurveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y + 20,  
