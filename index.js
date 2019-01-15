@@ -23,10 +23,11 @@ var nodeSelected = null;
 
 // Nodes
 var nodes = makeNodes();
-// var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5);
-var initialNode = new Node(0, {x: width * 0.47, y: height * 0.05}, getRadianFromAngle(90))
+var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
 
-window.onload = function(){
+console.log(">>> Initial node: "+initialNode.getPortPosition(0).x);
+
+window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
 
@@ -97,7 +98,7 @@ function makeNodes() {
     // [[node0, 0], [node1, 1], [node2, 2]]
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
-    connectPorts([node0, 2], [node0, 2]);
+    connectToInitial([node0, 2], [initialNode, 0]);
 
     connectPorts([node1, 1], [node2, 0]);
     connectPorts([node1, 2], [node3, 2]);
@@ -109,6 +110,7 @@ function makeNodes() {
 
     return nodes;
 }
+
 
 
 // ----- Auxiliar functions -----
@@ -131,6 +133,10 @@ function getRadianFromAngle(angle = 270) {
 function connectPorts([nodeA, slotA], [nodeB, slotB]) {
     nodeA.ports[slotA] = [nodeB, slotB];
     nodeB.ports[slotB] = [nodeA, slotA];
+}
+
+function connectToInitial([nodeA, slotA]){
+    nodeA.ports[slotA] = [initialNode, 0];
 }
 
 // ----- Drawing ------
@@ -164,13 +170,18 @@ function drawTriangle(context, node) {
 
     // Draw connection between nodes
     // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
-
+    context.strokeStyle = 'black'; 
     for (var i = 0; i < node.ports.length; i++) {
         context.beginPath();
         context.moveTo(node.getPortPosition(i).x, node.getPortPosition(i).y);
         var nodeToConnect = node.ports[i][0];
         var portToConnect = node.ports[i][1];
-        var portPosition = nodeToConnect.getPortPosition(portToConnect);
+        try {
+            var portPosition = nodeToConnect.getPortPosition(portToConnect);
+        } catch (error) {
+            var portPosition = initialNode.position;
+        }
+        
         context.lineTo(portPosition.x, portPosition.y) ;
         context.stroke(); 
     }
