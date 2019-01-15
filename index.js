@@ -180,4 +180,13 @@ function setLines(context) {
                           nodes[3].getPortPosition(1).x, nodes[3].getPortPosition(1).y);
     context.stroke(); 
 
+    // Node 3 (1) to Node 3 (2)   
+    context.beginPath();
+    context.moveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y);
+    context.bezierCurveTo(nodes[4].getPortPosition(1).x, nodes[4].getPortPosition(1).y + 20,  
+                          nodes[4].getPortPosition(2).x, nodes[4].getPortPosition(2).y + 20, 
+                          nodes[4].getPortPosition(2).x, nodes[4].getPortPosition(2).y);
+    context.stroke(); 
+
+
 }
