@@ -44,7 +44,7 @@ const width = 400;
 // Nodes
 var nodes = [];
 
-var initialNode = new InitialNode({x: width * 0.47, y: height * 0.05}, 5)
+var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5)
 
 var node0 = new Node(0, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
 nodes.push(node0);
@@ -107,7 +107,11 @@ function drawTriangle(context, node) {
     
     // Port 1 to 2
     context.moveTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
-    context.lineTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
+    // context.lineTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
+
+    context.bezierCurveTo(node.getPortPosition(1).x, node.getPortPosition(1).y, 
+                          node.position.x, node.position.y, 
+                          node.getPortPosition(2).x, node.getPortPosition(2).y);
 
     // Port 2 to 0
     context.moveTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
