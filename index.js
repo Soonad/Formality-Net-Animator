@@ -1,17 +1,3 @@
-function add([ax, ay], [bx, by]) {
-    return [ax + bx, ay + by];
-}
-
-function rotate([ax, ay], angle) {
-    return [
-        Math.cos(angle) * ax - Math.sin(angle) * ay, 
-        Math.sin(angle) * ax + Math.cos(angle) * ay];
-}
-
-function getRadianFromAngle(angle = 270) {
-    return angle * Math.PI / 180;
-}
-
 class Node {
     constructor(type, position, angle) {
         this.type = type; // 0: white node, 1: black node
@@ -42,36 +28,14 @@ const height = 400;
 const width = 400;
 
 // Nodes
-var nodes = [];
-
-var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5)
-
-var node0 = new Node(0, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
-nodes.push(node0);
-
-
-var node1 = new Node(0, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
-nodes.push(node1);
-
-var node2 = new Node(1, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
-nodes.push(node2);
-
-// -10 is to align an upside down node with the others
-var node3 = new Node(0, {x: width * 0.40, y: height * 0.60 - 10}, getRadianFromAngle(90));
-nodes.push(node3); 
-
-
-var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
-nodes.push(node4);
+var nodes = makeNodes();
+var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5);
 
 window.onload = function(){
     var canvas = document.getElementById("canvas");
-    var context = canvas.getContext("2d");
-
-    // context.clearRect(0, 0, canvas.width, canvas.height);
+    var context = canvas.getContext("2d"); 
 
     setInitialNode(context);
-
     setLines(context);
 
     // Calls a function or evaluates an expression at specified intervals
@@ -98,10 +62,86 @@ window.onload = function(){
                 context.strokeStyle = 'black'; 
             }
         };
+
+        
+
+
+
     }, 1000/30);
     
+    canvas.onclick = function(e) {
+        var positionClicked = [e.offsetX, e.offsetY];
+        var maxRadiusDistance = 20;
+
+        console.log(e);
+        console.log("\n\n> Position clicked: "+ positionClicked);
+        for (var i = 0; i < nodes.length; i++) {
+            
+            var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
+            console.log("- Node position: "+ [nodes[i].position.x, nodes[i].position.y]);
+            console.log("- Distance from node "+i+": "+distanceFromNode);
+            if (distanceFromNode <= maxRadiusDistance) {
+                console.log(">>> Node clicked");
+            }
+        }
+
+    };
 }
 
+function getDistanceBetween([ax, ay], [bx, by]) {
+    // var a = Math.abs(bx - ax);
+    // var b = Math.abs(by - ay);
+    return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
+}
+
+
+
+// Defines the properties for each node
+function makeNodes() {
+    var nodes = [];
+
+    var node0 = new Node(0, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
+    nodes.push(node0);
+
+
+    var node1 = new Node(0, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
+    nodes.push(node1);
+
+    var node2 = new Node(1, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
+    nodes.push(node2);
+
+    // -10 is to align an upside down node with the others
+    var node3 = new Node(0, {x: width * 0.40, y: height * 0.60 - 10}, getRadianFromAngle(90));
+    nodes.push(node3); 
+
+
+    var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
+    nodes.push(node4);
+
+    return nodes;
+}
+
+
+// ----- Auxiliar functions -----
+// Add two vectors returing a new one
+function add([ax, ay], [bx, by]) {
+    return [ax + bx, ay + by];
+}
+
+// Rotate a vector in an angle
+function rotate([ax, ay], angle) {
+    return [
+        Math.cos(angle) * ax - Math.sin(angle) * ay, 
+        Math.sin(angle) * ax + Math.cos(angle) * ay];
+}
+
+function getRadianFromAngle(angle = 270) {
+    return angle * Math.PI / 180;
+}
+
+
+// ----- Drawing ------
+// Draw the initial node as a small circle
 function setInitialNode(context) {
     context.beginPath();
     context.arc(initialNode.position.x, initialNode.position.y, initialNode.radius, 0, 2 * Math.PI);
@@ -109,6 +149,7 @@ function setInitialNode(context) {
     context.stroke();
 }
 
+// Draw the shape of a triangle according to it's ports
 function drawTriangle(context, node) {
     context.beginPath();
     // Port 0 to 1
@@ -132,6 +173,7 @@ function drawTriangle(context, node) {
     context.stroke(); 
 }
 
+// Draw all lines conecting the triangles
 function setLines(context) {
     // bezierCurveTo: 
         // Control point 1 (first two numbers), Control point 2 (second two numbers) and end point (last two numbers)
