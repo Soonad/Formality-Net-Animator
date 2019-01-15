@@ -13,59 +13,37 @@ class Node {
         var position = add([this.position.x, this.position.y], rotate([this.radius, 0], this.angle + add_angle));
         return {x: position[0], y: position[1]};
     }
-    
-}
 
-class InitialNode {
-    constructor(position, radius) {
-        this.position = position;
-        this.radius = radius;
-    }
 }
 
 // Auxiliar to render position
 const height = 400;
 const width = 400;
+var nodeSelected = null;
 
 // Nodes
 var nodes = makeNodes();
-var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5);
+// var initialNode = new InitialNode({x: width * 0.47 - 5, y: height * 0.05}, 5);
+var initialNode = new Node(0, {x: width * 0.47, y: height * 0.05}, getRadianFromAngle(90))
 
 window.onload = function(){
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
 
     setInitialNode(context);
-    setLines(context);
+    // setLines(context);
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
-
-        // for (var i = 0; i < nodes.length; i++) {
-        //     drawTriangle(context, nodes[i]); 
-            
-        //     if (nodes[i + 1].type === 1) {
-        //         context.strokeStyle = 'blue';
-        //     } else {
-        //         context.strokeStyle = 'black'; 
-        //     }
-
-        // };
         for (node of nodes) {    
-            
-            drawTriangle(context, node); 
-            
-            // OBS: The node painted is the next one, not the real type 1
             if (node.type == 1) {
                 context.strokeStyle = 'blue';
             } else {
                 context.strokeStyle = 'black'; 
             }
+
+            drawTriangle(context, node); 
         };
-
-        
-
-
 
     }, 1000/30);
     
@@ -73,28 +51,25 @@ window.onload = function(){
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 20;
 
-        console.log(e);
-        console.log("\n\n> Position clicked: "+ positionClicked);
-        for (var i = 0; i < nodes.length; i++) {
-            
+        nodeSelected = null;
+
+        for (var i = 0; i < nodes.length; i++) {     
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
-            console.log("- Node position: "+ [nodes[i].position.x, nodes[i].position.y]);
-            console.log("- Distance from node "+i+": "+distanceFromNode);
             if (distanceFromNode <= maxRadiusDistance) {
-                console.log(">>> Node clicked");
+                nodeSelected = nodes[i];
+                console.log(">>> Node clicked: "+i);
             }
         }
-
+        if (nodeSelected !== null) {
+            console.log(">> Node selected: "+[nodeSelected.position.x, nodeSelected.position.y]);
+        }
+    
     };
 }
 
 function getDistanceBetween([ax, ay], [bx, by]) {
-    // var a = Math.abs(bx - ax);
-    // var b = Math.abs(by - ay);
     return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
 }
-
-
 
 // Defines the properties for each node
 function makeNodes() {
@@ -118,6 +93,20 @@ function makeNodes() {
     var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
+
+    // [[node0, 0], [node1, 1], [node2, 2]]
+    connectPorts([node0, 0], [node1, 0]);
+    connectPorts([node0, 1], [node4, 0]);
+    connectPorts([node0, 2], [node0, 2]);
+
+    connectPorts([node1, 1], [node2, 0]);
+    connectPorts([node1, 2], [node3, 2]);
+
+    connectPorts([node2, 1], [node3, 0]);
+    connectPorts([node2, 2], [node3, 1]);
+
+    connectPorts([node4, 1], [node4, 2]);
+
     return nodes;
 }
 
@@ -139,12 +128,16 @@ function getRadianFromAngle(angle = 270) {
     return angle * Math.PI / 180;
 }
 
+function connectPorts([nodeA, slotA], [nodeB, slotB]) {
+    nodeA.ports[slotA] = [nodeB, slotB];
+    nodeB.ports[slotB] = [nodeA, slotA];
+}
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
 function setInitialNode(context) {
     context.beginPath();
-    context.arc(initialNode.position.x, initialNode.position.y, initialNode.radius, 0, 2 * Math.PI);
+    context.arc(initialNode.position.x, initialNode.position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
 }
@@ -153,14 +146,11 @@ function setInitialNode(context) {
 function drawTriangle(context, node) {
     context.beginPath();
     // Port 0 to 1
-    context.moveTo(node
-        .getPortPosition(0).x, node.getPortPosition(0).y);
+    context.moveTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
     context.lineTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
     
     // Port 1 to 2
     context.moveTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
-    // context.lineTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
-
     context.bezierCurveTo(node.getPortPosition(1).x, node.getPortPosition(1).y, 
                           node.position.x, node.position.y, 
                           node.getPortPosition(2).x, node.getPortPosition(2).y);
@@ -171,6 +161,19 @@ function drawTriangle(context, node) {
 
     context.closePath();
     context.stroke(); 
+
+    // Draw connection between nodes
+    // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
+
+    for (var i = 0; i < node.ports.length; i++) {
+        context.beginPath();
+        context.moveTo(node.getPortPosition(i).x, node.getPortPosition(i).y);
+        var nodeToConnect = node.ports[i][0];
+        var portToConnect = node.ports[i][1];
+        var portPosition = nodeToConnect.getPortPosition(portToConnect);
+        context.lineTo(portPosition.x, portPosition.y) ;
+        context.stroke(); 
+    }
 }
 
 // Draw all lines conecting the triangles
