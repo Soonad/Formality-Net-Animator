@@ -4,6 +4,7 @@ class Node {
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
+        this.pivots = [{x:20,y:20}, {x:0,y:0}, {x:0,y:0}];
         this.radius = 20;
     }
 
@@ -19,7 +20,11 @@ class Node {
 // Auxiliar to render position
 const height = 400;
 const width = 400;
-var nodeSelected = null;
+// TODO: will represent a thing clicked. Can be of type Node or Pivot.
+// ["node", node] -> type node
+// ["pivot", node, 0] -> type pivot
+var nodeSelected = null; 
+
 
 // Nodes
 var nodes = makeNodes();
@@ -46,9 +51,14 @@ window.onload = function() {
 
     }, 1000/30);
     
+    /**
+     * TODO: must identify what as clicked. It can be a Node or a Pivot.
+     * On both cases if the mouse moves, the element will also move. 
+     */
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 20;
+
 
         nodeSelected = null;
 
@@ -92,8 +102,6 @@ function makeNodes() {
     var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
-
-    // [[node0, 0], [node1, 1], [node2, 2]]
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
     connectToInitial([node0, 2], [initialNode, 0]);
@@ -169,18 +177,32 @@ function drawTriangle(context, node) {
     // Draw connection between nodes
     // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
     context.strokeStyle = 'black'; 
-    for (var i = 0; i < node.ports.length; i++) {
-        context.beginPath();
-        context.moveTo(node.getPortPosition(i).x, node.getPortPosition(i).y);
+    for (var i = 0; i < 3; i++) {
+        var portPosition = node.getPortPosition(i);
+        var portPivot = node.pivots[i];
+
         var nodeToConnect = node.ports[i][0];
-        var portToConnect = node.ports[i][1];
-        try {
-            var portPosition = nodeToConnect.getPortPosition(portToConnect);
-        } catch (error) {
-            var portPosition = initialNode.position;
+        var slotToConnect = node.ports[i][1];
+        if (nodeToConnect) {
+            var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
+            var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
+        } else {
+            var portToConnectPivot = {x:0, y:0};
+            var portToConnectPosition = initialNode.position;
         }
         
-        context.lineTo(portPosition.x, portPosition.y) ;
+        // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
+        context.beginPath();
+        context.moveTo(portPosition.x, portPosition.y);
+        context.bezierCurveTo(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 
+                            portToConnectPosition.x + portToConnectPivot.x, portToConnectPosition.y + portToConnectPivot.y,
+                            portToConnectPosition.x, portToConnectPosition.y);
         context.stroke(); 
+
+        // Shows the position of the pivots
+        context.beginPath();
+        context.arc(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 3, 0, 2 * Math.PI);
+        context.fill();
+        context.stroke();
     }
 }
