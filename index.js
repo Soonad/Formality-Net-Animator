@@ -1,6 +1,6 @@
 class Node {
     constructor(type, position, angle) {
-        this.type = type; // 0: white node, 1: black node
+        this.type = type; // 0: initial, 1: white node, 2: black node
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
@@ -42,7 +42,7 @@ window.onload = function() {
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
         for (node of nodes) {    
-            if (node.type == 1) {
+            if (node.type == 2) {
                 context.strokeStyle = 'blue';
             } else {
                 context.strokeStyle = 'black'; 
@@ -54,8 +54,7 @@ window.onload = function() {
     }, 1000/30);
     
     /**
-     * TODO: must identify what was clicked. It can be a Node or a Pivot.
-     * On both cases if the mouse moves, the element will also move. 
+     * TODO: move the selected element. Can be using the mouse or keyboard
      */
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
@@ -68,7 +67,6 @@ window.onload = function() {
             // Checks if any node was clicked 
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
             if (distanceFromNode <= maxRadiusDistance) {
-                // elementSelected = nodes[i];
                 elementSelected = ["node", nodes[i]];
             }
             
@@ -76,13 +74,10 @@ window.onload = function() {
             for (var j = 0; j < 3; j++) {            
                 var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
                 if (distanceFromPivot <= maxRadiusDistanceForPivot) {
-                    // Formart as described for type Pivot
                     elementSelected = ["pivot", nodes[i], j];
                     console.log(">>> 1. Pivot on port "+j+" clicked for node "+i);
                 }
-            }
-            
-
+            }  
         }
 
         if (elementSelected !== null) {
@@ -106,29 +101,29 @@ function getDistanceBetween([ax, ay], [bx, by]) {
 function makeNodes() {
     var nodes = [];
 
-    var node0 = new Node(0, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
+    var node0 = new Node(1, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
     nodes.push(node0);
 
 
-    var node1 = new Node(0, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
+    var node1 = new Node(1, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
     nodes.push(node1);
 
-    var node2 = new Node(1, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
+    var node2 = new Node(2, {x: width * 0.20, y: height * 0.60}, getRadianFromAngle());
     nodes.push(node2);
 
     // -10 is to align an upside down node with the others
-    var node3 = new Node(0, {x: width * 0.40, y: height * 0.60 - 10}, getRadianFromAngle(90));
+    var node3 = new Node(1, {x: width * 0.40, y: height * 0.60 - 10}, getRadianFromAngle(90));
     nodes.push(node3); 
 
 
-    var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
+    var node4 = new Node(1, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
 
     // Connections between ports
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
-    connectToInitial([node0, 2], [initialNode, 0]);
+    connectToInitialNode([node0, 2]);
 
     connectPorts([node1, 1], [node2, 0]);
     connectPorts([node1, 2], [node3, 2]);
@@ -166,10 +161,10 @@ function connectPorts([nodeA, slotA], [nodeB, slotB]) {
     nodeB.ports[slotB] = [nodeA, slotA];
 }
 
-function connectToInitial([nodeA, slotA]){
+function connectToInitialNode([nodeA, slotA]){
     nodeA.ports[slotA] = [initialNode, 0];
+    initialNode.ports[0] = [nodeA, slotA];
 }
-
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
@@ -178,6 +173,20 @@ function setInitialNode(context) {
     context.arc(initialNode.position.x, initialNode.position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
+}
+
+// Set and draws the initial position for pivots
+function setInitialPositionForPivots(context) {
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = 0; j < 3; j++) {
+            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
+             // Shows the position of the pivots
+            context.beginPath();
+            context.arc(nodes[i].pivots[j].x, nodes[i].pivots[j].y, 3, 0, 2 * Math.PI);
+            context.fill();
+            context.stroke();
+        } 
+    }
 }
 
 // Draw the shape of a triangle according to it's ports and it's connections
@@ -209,22 +218,15 @@ function drawTriangle(context, node) {
 
         var nodeToConnect = node.ports[i][0];
         var slotToConnect = node.ports[i][1];
-        if (nodeToConnect) {
+        if (nodeToConnect.type !== 0) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
-            var portToConnectPivot = {x:0, y:0};
+            var portToConnectPivot = initialNode.position;
             var portToConnectPosition = initialNode.position;
         }
         
         // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
-        // context.beginPath();
-        // context.moveTo(portPosition.x, portPosition.y);
-        // context.bezierCurveTo(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 
-        //                     portToConnectPosition.x + portToConnectPivot.x, portToConnectPosition.y + portToConnectPivot.y,
-        //                     portToConnectPosition.x, portToConnectPosition.y);
-        // context.stroke(); 
-
         context.beginPath();
         context.moveTo(portPosition.x, portPosition.y);
         context.bezierCurveTo(portPivot.x, portPivot.y, 
@@ -234,15 +236,3 @@ function drawTriangle(context, node) {
     }
 }
 
-function setInitialPositionForPivots(context) {
-    for (var i = 0; i < nodes.length; i++) {
-        for (var j = 0; j < 3; j++) {
-            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
-             // Shows the position of the pivots
-            context.beginPath();
-            context.arc(nodes[i].pivots[j].x, nodes[i].pivots[j].y, 3, 0, 2 * Math.PI);
-            context.fill();
-            context.stroke();
-        } 
-    }
-}
