@@ -4,7 +4,8 @@ class Node {
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
-        this.pivots = [{x:20,y:20}, {x:0,y:0}, {x:0,y:0}];
+        // Pivots starts in the same positon as the ports
+        this.pivots = [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}];
         this.radius = 20;
     }
 
@@ -23,19 +24,20 @@ const width = 400;
 // TODO: will represent a thing clicked. Can be of type Node or Pivot.
 // ["node", node] -> type node
 // ["pivot", node, 0] -> type pivot
-var nodeSelected = null; 
+var elementSelected = null; 
 
 
 // Nodes
-var nodes = makeNodes();
 var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
+var nodes = makeNodes();
+
 
 window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
 
     setInitialNode(context);
-    // setLines(context);
+    setInitialPositionForPivots(context);
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
@@ -52,25 +54,45 @@ window.onload = function() {
     }, 1000/30);
     
     /**
-     * TODO: must identify what as clicked. It can be a Node or a Pivot.
+     * TODO: must identify what was clicked. It can be a Node or a Pivot.
      * On both cases if the mouse moves, the element will also move. 
      */
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
-        var maxRadiusDistance = 20;
+        var maxRadiusDistance = 10;
+        var maxRadiusDistanceForPivot = 10;
 
-
-        nodeSelected = null;
-
-        for (var i = 0; i < nodes.length; i++) {     
+        elementSelected = null;
+    
+        for (var i = 0; i < nodes.length; i++) {    
+            // Checks if any node was clicked 
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
             if (distanceFromNode <= maxRadiusDistance) {
-                nodeSelected = nodes[i];
-                console.log(">>> Node clicked: "+i);
+                // elementSelected = nodes[i];
+                elementSelected = ["node", nodes[i]];
             }
+            
+            // Check if any pivot was clicked
+            for (var j = 0; j < 3; j++) {            
+                var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
+                if (distanceFromPivot <= maxRadiusDistanceForPivot) {
+                    // Formart as described for type Pivot
+                    elementSelected = ["pivot", nodes[i], j];
+                    console.log(">>> 1. Pivot on port "+j+" clicked for node "+i);
+                }
+            }
+            
+
         }
-        if (nodeSelected !== null) {
-            console.log(">> Node selected: "+[nodeSelected.position.x, nodeSelected.position.y]);
+
+        if (elementSelected !== null) {
+            // console.log(">> Element selected: "+[elementSelected.position.x, elementSelected.position.y]);
+            if (elementSelected[0] === "node") {
+                console.log(">> 2. Node selected on position x:"+ elementSelected[1].position.x+" y:"+ elementSelected[1].position.y);
+            } else {
+                console.log(">> 2. Pivot selected on position x:"+ elementSelected[1].pivots[elementSelected[2]].x+" y:"+ elementSelected[1].pivots[elementSelected[2]].y);
+            }
+            
         }
     
     };
@@ -102,6 +124,8 @@ function makeNodes() {
     var node4 = new Node(0, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
+
+    // Connections between ports
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
     connectToInitial([node0, 2], [initialNode, 0]);
@@ -120,7 +144,7 @@ function makeNodes() {
 
 
 // ----- Auxiliar functions -----
-// Add two vectors returing a new one
+// Add two vectors returning a new one
 function add([ax, ay], [bx, by]) {
     return [ax + bx, ay + by];
 }
@@ -136,6 +160,7 @@ function getRadianFromAngle(angle = 270) {
     return angle * Math.PI / 180;
 }
 
+// -- Conections between nodes --
 function connectPorts([nodeA, slotA], [nodeB, slotB]) {
     nodeA.ports[slotA] = [nodeB, slotB];
     nodeB.ports[slotB] = [nodeA, slotA];
@@ -144,6 +169,7 @@ function connectPorts([nodeA, slotA], [nodeB, slotB]) {
 function connectToInitial([nodeA, slotA]){
     nodeA.ports[slotA] = [initialNode, 0];
 }
+
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
@@ -184,25 +210,39 @@ function drawTriangle(context, node) {
         var nodeToConnect = node.ports[i][0];
         var slotToConnect = node.ports[i][1];
         if (nodeToConnect) {
-            var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
+            var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
             var portToConnectPivot = {x:0, y:0};
             var portToConnectPosition = initialNode.position;
         }
         
         // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
+        // context.beginPath();
+        // context.moveTo(portPosition.x, portPosition.y);
+        // context.bezierCurveTo(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 
+        //                     portToConnectPosition.x + portToConnectPivot.x, portToConnectPosition.y + portToConnectPivot.y,
+        //                     portToConnectPosition.x, portToConnectPosition.y);
+        // context.stroke(); 
+
         context.beginPath();
         context.moveTo(portPosition.x, portPosition.y);
-        context.bezierCurveTo(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 
-                            portToConnectPosition.x + portToConnectPivot.x, portToConnectPosition.y + portToConnectPivot.y,
+        context.bezierCurveTo(portPivot.x, portPivot.y, 
+                            portToConnectPivot.x, portToConnectPivot.y,
                             portToConnectPosition.x, portToConnectPosition.y);
         context.stroke(); 
+    }
+}
 
-        // Shows the position of the pivots
-        context.beginPath();
-        context.arc(portPosition.x + portPivot.x, portPosition.y + portPivot.y, 3, 0, 2 * Math.PI);
-        context.fill();
-        context.stroke();
+function setInitialPositionForPivots(context) {
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = 0; j < 3; j++) {
+            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
+             // Shows the position of the pivots
+            context.beginPath();
+            context.arc(nodes[i].pivots[j].x, nodes[i].pivots[j].y, 3, 0, 2 * Math.PI);
+            context.fill();
+            context.stroke();
+        } 
     }
 }
