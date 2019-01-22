@@ -37,7 +37,7 @@ window.onload = function() {
     var context = canvas.getContext("2d"); 
 
     setInitialNode(context);
-    setInitialPositionForPivots(context);
+    setInitialPositionForPivots();
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
@@ -48,11 +48,13 @@ window.onload = function() {
                 context.strokeStyle = 'black'; 
             }
 
-            drawTriangle(context, node); 
+            drawElements(context, node); 
+
         };
 
     }, 1000/30);
     
+
     /**
      * TODO: move the selected element. Can be using the mouse or keyboard
      */
@@ -91,11 +93,44 @@ window.onload = function() {
         }
     
     };
+
+
+    canvas.onmousedown = function(e) {
+        
+        if (elementSelected) {
+            var mousePosition = [e.offsetX, e.offsetY];
+            var xPosition = elementSelected[1].pivots[elementSelected[2]].x;
+            var yPosition = elementSelected[1].pivots[elementSelected[2]].y;
+            elementSelected.position = add([xPosition, yPosition], mousePosition);
+            console.log("moving element");
+        }
+      
+        // moveAt(e.pageX, e.pageY);
+      
+        // // centers the canvas at (pageX, pageY) coordinates
+        // // function moveAt(pageX, pageY) {
+        // //   canvas.style.left = pageX - canvas.offsetWidth / 2 + 'px';
+        // //   canvas.style.top = pageY - canvas.offsetHeight / 2 + 'px';
+        // // }
+      
+        // function onMouseMove(e) {
+        //   moveAt(e.pageX, e.pageY);
+        // }
+      
+        // (3) move the canvas on mousemove
+        // document.addeListener('mousemove', onMouseMove);
+      
+        // // (4) drop the canvas, remove unneeded handlers
+        // canvas.onmouseup = function() {
+        //   document.removeeListener('mousemove', onMouseMove);
+        //   canvas.onmouseup = null;
+        // };
+      
+      };
+
 }
 
-function getDistanceBetween([ax, ay], [bx, by]) {
-    return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
-}
+
 
 // Defines the properties for each node
 function makeNodes() {
@@ -137,8 +172,28 @@ function makeNodes() {
 }
 
 
+function moveElement(e) {
+    var x = e.which || e.keyCode;
+    switch (x) {
+        case 97: // letter "a", moves to the left
+            elementSelected.position = elementSelected.position.x - 5; 
+            console.log("Key a pressed");
+            break;
+        case 110:
+            break;
+        default:
+         console.log("other keyboard clicked");
+    }
+    
+}
+
 
 // ----- Auxiliar functions -----
+// Gets the distance between 2 points
+function getDistanceBetween([ax, ay], [bx, by]) {
+    return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
+}
+
 // Add two vectors returning a new one
 function add([ax, ay], [bx, by]) {
     return [ax + bx, ay + by];
@@ -175,22 +230,18 @@ function setInitialNode(context) {
     context.stroke();
 }
 
-// Set and draws the initial position for pivots
-function setInitialPositionForPivots(context) {
+function setInitialPositionForPivots() { 
     for (var i = 0; i < nodes.length; i++) {
         for (var j = 0; j < 3; j++) {
             nodes[i].pivots[j] = nodes[i].getPortPosition(j);
-             // Shows the position of the pivots
-            context.beginPath();
-            context.arc(nodes[i].pivots[j].x, nodes[i].pivots[j].y, 3, 0, 2 * Math.PI);
-            context.fill();
-            context.stroke();
         } 
     }
+    
 }
 
 // Draw the shape of a triangle according to it's ports and it's connections
-function drawTriangle(context, node) {
+function drawElements(context, node) {
+    // -- Triangles --
     context.beginPath();
     // Port 0 to 1
     context.moveTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
@@ -209,7 +260,6 @@ function drawTriangle(context, node) {
     context.closePath();
     context.stroke(); 
 
-    // Draw connection between nodes
     // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
     context.strokeStyle = 'black'; 
     for (var i = 0; i < 3; i++) {
@@ -226,6 +276,12 @@ function drawTriangle(context, node) {
             var portToConnectPosition = initialNode.position;
         }
         
+        // Shows the position of the pivots
+        context.beginPath();
+        context.arc(node.pivots[i].x, node.pivots[i].y, 3, 0, 2 * Math.PI);
+        context.fill();
+        context.stroke();
+
         // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
         context.beginPath();
         context.moveTo(portPosition.x, portPosition.y);
