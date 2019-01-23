@@ -24,9 +24,12 @@ const width = 400;
 /**
  * Represent a thing clicked. Can be of type Node or Pivot.
  * Type node: ["node", node]
- * Type pivot: ["pivot", node, 0] 
+ * Type pivot: ["pivot", node, port] 
  */
 var elementSelected = null; 
+// A node that will change it's angle
+// Type node: ["node", node]
+var elementToRotate = null;
 var selectionColor = 'green';
 
 // Nodes
@@ -56,11 +59,30 @@ window.onload = function() {
 
     }, 1000/30);
     
+    // Select node to rotate
+    canvas.onclick = function(e) {
+        var positionClicked = [e.offsetX, e.offsetY];
+        var maxRadiusDistance = 10;
+
+        elementToRotate = null;
+
+        for (var i = 0; i < nodes.length; i++) {    
+            // Checks if any node was clicked 
+            var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
+            if (distanceFromNode <= maxRadiusDistance) {
+                elementToRotate = nodes[i];
+                console.log("Element to rotate: "+ i);
+            }     
+        }
+
+    }
+    // -- Drag and drop actions --
     canvas.onmousedown = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
 
         elementSelected = null;
+        elementToRotate = null;
 
         // Check if the initial node was clicked
         var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
@@ -106,53 +128,27 @@ window.onload = function() {
     }
 }
 
-// window.addEventListener("keydown", keysPressed, false);
-// window.addEventListener("keyup", keysReleased, false);
+window.addEventListener("keydown", keysPressed, false);
+window.addEventListener("keyup", keysReleased, false);
 
-// var keys = [];
+var keys = [];
 
-// function keysPressed(e) {
-//     // store an entry for every key pressed
-//     keys[e.keyCode] = true;
-//     if (elementSelected) {
-//         var elementToMove = null;
-//         if (elementSelected[0] === "pivot") {
-//             elementToMove = elementSelected[1].pivots[elementSelected[2]]; // pivot related to one port in one node
-//         } else {
-//             elementToMove = elementSelected.position;
-//         }
+function keysPressed(e) {
+    // store an entry for every key pressed
+    keys[e.keyCode] = true;
 
-//         // left
-//         if (keys[37]) {
-//             elementToMove.x -= 5;
-//         }
+    if (elementToRotate) {
+        // left
+        if (keys[37]) { elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5) }
+        // right
+        if (keys[39]) { elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5); }
+    }
+    // e.preventDefault();
+}
 
-//         // right
-//         if (keys[39]) {
-//             elementToMove.x += 5;
-//         }
-
-//         // down
-//         if (keys[38]) {
-//             elementToMove.y -= 5;
-//         }
-
-//         // up
-//         if (keys[40]) {
-//             elementToMove.y += 5;
-//         }
-
-//     }
- 
-//     e.preventDefault();
-
-// }
-
-// function keysReleased(e) {
-//     // mark keys that were released
-//     keys[e.keyCode] = false;
-// }
-
+function keysReleased(e) {
+    keys[e.keyCode] = false;
+}
 
 
 
@@ -263,6 +259,11 @@ function drawElements(context, node) {
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
+            context.strokeStyle = selectionColor; 
+        }
+    }
+    if (elementToRotate) {
+        if (elementToRotate === node) {
             context.strokeStyle = selectionColor; 
         }
     }
