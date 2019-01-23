@@ -27,7 +27,7 @@ const width = 400;
  * Type pivot: ["pivot", node, 0] 
  */
 var elementSelected = null; 
-
+var selectionColor = 'green';
 
 // Nodes
 var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
@@ -43,7 +43,7 @@ window.onload = function() {
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
         context.clearRect(0, 0, canvas.width, canvas.height);   
-        setInitialNode(context);
+        drawInitialNode(context);
 
         for (node of nodes) {    
             if (node.type == 2) {
@@ -59,38 +59,44 @@ window.onload = function() {
     canvas.onmousedown = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
-        var maxRadiusDistanceForPivot = 10;
 
         elementSelected = null;
 
-        for (var i = 0; i < nodes.length; i++) {    
-            // Checks if any node was clicked 
-            var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
-            if (distanceFromNode <= maxRadiusDistance) {
-                elementSelected = ["node", nodes[i]];
+        // Check if the initial node was clicked
+        var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
+        if (distanceFromInitialNode <= maxRadiusDistance){
+            elementSelected = ["initialNode"];
+        } else {
+            for (var i = 0; i < nodes.length; i++) {    
+                // Checks if any node was clicked 
+                var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
+                if (distanceFromNode <= maxRadiusDistance) {
+                    elementSelected = ["node", nodes[i]];
+                }     
+                // Check if any pivot was clicked
+                for (var j = 0; j < 3; j++) {            
+                    var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
+                    if (distanceFromPivot <= maxRadiusDistance) {
+                        elementSelected = ["pivot", nodes[i], j];
+                    }
+                }  
             }
-            
-            // Check if any pivot was clicked
-            for (var j = 0; j < 3; j++) {            
-                var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
-                if (distanceFromPivot <= maxRadiusDistanceForPivot) {
-                    elementSelected = ["pivot", nodes[i], j];
-                    console.log(">>> 1. Pivot on port "+j+" clicked for node "+i);
-                }
-            }  
         }
 
     };
 
     canvas.onmousemove = function(e) {
         if (elementSelected) {
+            var positionClicked = {x: e.offsetX, y: e.offsetY};
             var node = elementSelected[1];
             // Check the type of the element selected
             if (elementSelected[0] === "node") {
-                node.position = {x: e.offsetX, y: e.offsetY};
+                node.position = positionClicked
             } else if (elementSelected[0] === "pivot") {
                 var pivotPort = elementSelected[2];
-                node.pivots[pivotPort] = {x: e.offsetX, y: e.offsetY};
+                node.pivots[pivotPort] = positionClicked;
+            } else {
+                initialNode.position = positionClicked;
             }
         }  
     }
@@ -225,7 +231,17 @@ function connectToInitialNode([nodeA, slotA]){
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
-function setInitialNode(context) {
+function drawInitialNode(context) {
+    if (elementSelected) {
+        if (elementSelected[0] === "initialNode") {
+            context.fillStyle = selectionColor;
+            context.strokeStyle = selectionColor;
+        } else {
+            context.fillStyle = 'black';
+            context.strokeStyle = 'black';
+        }
+    }
+    
     context.beginPath();
     context.arc(initialNode.position.x, initialNode.position.y, 5, 0, 2 * Math.PI);
     context.fill();
@@ -247,7 +263,7 @@ function drawElements(context, node) {
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
-            context.strokeStyle = 'green'; 
+            context.strokeStyle = selectionColor; 
         }
     }
 
@@ -301,8 +317,8 @@ function drawElements(context, node) {
         // Highlight the selected pivot
         if (elementSelected) {
             if (elementSelected[1] === node && elementSelected[2] === i) { // Pivot on a selected node
-                context.strokeStyle = 'green';
-                context.fillStyle = 'green'; 
+                context.strokeStyle = selectionColor;
+                context.fillStyle = selectionColor; 
             }
         }
         // Shows the position of the pivots
