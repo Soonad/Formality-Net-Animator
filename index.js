@@ -18,12 +18,14 @@ class Node {
 
 }
 
-// Auxiliar to render position
+// Size for canvas element
 const height = 400;
 const width = 400;
-// TODO: will represent a thing clicked. Can be of type Node or Pivot.
-// ["node", node] -> type node
-// ["pivot", node, 0] -> type pivot
+/**
+ * Represent a thing clicked. Can be of type Node or Pivot.
+ * Type node: ["node", node]
+ * Type pivot: ["pivot", node, 0] 
+ */
 var elementSelected = null; 
 
 
@@ -40,8 +42,7 @@ window.onload = function() {
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        
+        context.clearRect(0, 0, canvas.width, canvas.height);   
         setInitialNode(context);
 
         for (node of nodes) {    
@@ -50,18 +51,12 @@ window.onload = function() {
             } else {
                 context.strokeStyle = 'black'; 
             }
-
             drawElements(context, node); 
-
         };
 
     }, 1000/30);
     
-
-    /**
-     * TODO: move the selected element. Can be using the mouse or keyboard
-     */
-    canvas.onclick = function(e) {
+    canvas.onmousedown = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
         var maxRadiusDistanceForPivot = 10;
@@ -85,85 +80,77 @@ window.onload = function() {
             }  
         }
 
-        if (elementSelected !== null) {
-            // console.log(">> Element selected: "+[elementSelected.position.x, elementSelected.position.y]);
-            if (elementSelected[0] === "node") {
-                console.log(">> 2. Node selected on position x:"+ elementSelected[1].position.x+" y:"+ elementSelected[1].position.y);
-            } else {
-                console.log(">> 2. Pivot selected on position x:"+ elementSelected[1].pivots[elementSelected[2]].x+" y:"+ elementSelected[1].pivots[elementSelected[2]].y);
-            }
-            
-        }
-    
     };
 
     canvas.onmousemove = function(e) {
+        if (elementSelected) {
+            var node = elementSelected[1];
+            // Check the type of the element selected
+            if (elementSelected[0] === "node") {
+                node.position = {x: e.offsetX, y: e.offsetY};
+            } else if (elementSelected[0] === "pivot") {
+                var pivotPort = elementSelected[2];
+                node.pivots[pivotPort] = {x: e.offsetX, y: e.offsetY};
+            }
+        }  
+    }
 
-        // console.log("> on mouse move, element selected: "+ elementSelected);
-        // if (elementSelected !== null) {
-        //     nodes[0].position = {x: e.offsetX, y: e.offsetY};
-            // console.log("On mouse move, position of the node: "+ nodes[0].position.x)
-            // console.log("On node, port position: "+ nodes[0].getPortPosition(0).x,  nodes[0].getPortPosition(0).y)
-        // }
+    canvas.onmouseup = function(e) {
+        elementSelected = null;
     }
 }
 
-/**
- * TODO: a node must be clicked to move on the screen
- * I'm trying to update a position on key pressed =/
- */
+// window.addEventListener("keydown", keysPressed, false);
+// window.addEventListener("keyup", keysReleased, false);
 
-window.addEventListener("keydown", keysPressed, false);
-window.addEventListener("keyup", keysReleased, false);
+// var keys = [];
 
-var keys = [];
+// function keysPressed(e) {
+//     // store an entry for every key pressed
+//     keys[e.keyCode] = true;
+//     if (elementSelected) {
+//         var elementToMove = null;
+//         if (elementSelected[0] === "pivot") {
+//             elementToMove = elementSelected[1].pivots[elementSelected[2]]; // pivot related to one port in one node
+//         } else {
+//             elementToMove = elementSelected.position;
+//         }
 
-function keysPressed(e) {
-    // store an entry for every key pressed
-    keys[e.keyCode] = true;
-    if (elementSelected) {
-        var elementToMove = null;
-        if (elementSelected[0] === "pivot") {
-            elementToMove = elementSelected[1].pivots[elementSelected[2]]; // pivot related to one port in one node
-        } else {
-            elementToMove = elementSelected.position;
-        }
+//         // left
+//         if (keys[37]) {
+//             elementToMove.x -= 5;
+//         }
 
-        // left
-        if (keys[37]) {
-            elementToMove.x -= 5;
-        }
+//         // right
+//         if (keys[39]) {
+//             elementToMove.x += 5;
+//         }
 
-        // right
-        if (keys[39]) {
-            elementToMove.x += 5;
-        }
+//         // down
+//         if (keys[38]) {
+//             elementToMove.y -= 5;
+//         }
 
-        // down
-        if (keys[38]) {
-            elementToMove.y -= 5;
-        }
+//         // up
+//         if (keys[40]) {
+//             elementToMove.y += 5;
+//         }
 
-        // up
-        if (keys[40]) {
-            elementToMove.y += 5;
-        }
-
-    }
+//     }
  
-    e.preventDefault();
+//     e.preventDefault();
 
-}
+// }
 
-function keysReleased(e) {
-    // mark keys that were released
-    keys[e.keyCode] = false;
-}
-
-
+// function keysReleased(e) {
+//     // mark keys that were released
+//     keys[e.keyCode] = false;
+// }
 
 
-// Defines the properties for each node
+
+
+// Defines the properties of each node
 function makeNodes() {
     var nodes = [];
 
@@ -255,6 +242,15 @@ function setInitialPositionForPivots() {
 
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
+
+    context.strokeStyle = 'black';   
+    if (elementSelected) {
+        // Highlight the selected element
+        if (elementSelected[1] === node && elementSelected[0] === "node") {
+            context.strokeStyle = 'green'; 
+        }
+    }
+
     // -- Triangles --
     context.beginPath();
     // Port 0 to 1
@@ -264,8 +260,8 @@ function drawElements(context, node) {
     // Port 1 to 2
     context.moveTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
     context.bezierCurveTo(node.getPortPosition(1).x, node.getPortPosition(1).y, 
-                          node.position.x, node.position.y, 
-                          node.getPortPosition(2).x, node.getPortPosition(2).y);
+                            node.position.x, node.position.y, 
+                            node.getPortPosition(2).x, node.getPortPosition(2).y);
 
     // Port 2 to 0
     context.moveTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
@@ -275,7 +271,6 @@ function drawElements(context, node) {
     context.stroke(); 
 
     // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
-    context.strokeStyle = 'black'; 
     for (var i = 0; i < 3; i++) {
         var portPosition = node.getPortPosition(i);
         var portPivot = node.pivots[i];
@@ -289,13 +284,12 @@ function drawElements(context, node) {
             var portToConnectPivot = initialNode.position;
             var portToConnectPosition = initialNode.position;
         }
-        
-        // Shows the position of the pivots
-        context.beginPath();
-        context.arc(node.pivots[i].x, node.pivots[i].y, 3, 0, 2 * Math.PI);
-        context.fill();
-        context.stroke();
-
+        // Updates the pivot position
+        // node.pivots[i] = add([node.pivots[i].x, node.pivots[i].y], [node.position.x, node.position.y]);
+    
+        // -- Drawing pivots and lines -- 
+        context.strokeStyle = 'black';
+        context.fillStyle = 'black'; 
         // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
         context.beginPath();
         context.moveTo(portPosition.x, portPosition.y);
@@ -303,6 +297,19 @@ function drawElements(context, node) {
                             portToConnectPivot.x, portToConnectPivot.y,
                             portToConnectPosition.x, portToConnectPosition.y);
         context.stroke(); 
+
+        // Highlight the selected pivot
+        if (elementSelected) {
+            if (elementSelected[1] === node && elementSelected[2] === i) { // Pivot on a selected node
+                context.strokeStyle = 'green';
+                context.fillStyle = 'green'; 
+            }
+        }
+        // Shows the position of the pivots
+        context.beginPath();
+        context.arc(node.pivots[i].x, node.pivots[i].y, 3, 0, 2 * Math.PI);
+        context.fill();
+        context.stroke();
     }
 }
 
