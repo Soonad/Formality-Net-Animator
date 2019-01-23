@@ -5,7 +5,7 @@ class Node {
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
         // Pivots starts in the same positon as the ports
-        this.pivots = [{x:0,y:0}, {x:0,y:0}, {x:0,y:0}];
+        this.pivots = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
         this.radius = 20;
     }
 
@@ -35,12 +35,15 @@ var nodes = makeNodes();
 window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
-
-    setInitialNode(context);
+    
     setInitialPositionForPivots();
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        
+        setInitialNode(context);
+
         for (node of nodes) {    
             if (node.type == 2) {
                 context.strokeStyle = 'blue';
@@ -64,7 +67,7 @@ window.onload = function() {
         var maxRadiusDistanceForPivot = 10;
 
         elementSelected = null;
-    
+
         for (var i = 0; i < nodes.length; i++) {    
             // Checks if any node was clicked 
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
@@ -94,41 +97,69 @@ window.onload = function() {
     
     };
 
+    canvas.onmousemove = function(e) {
 
-    canvas.onmousedown = function(e) {
-        
-        if (elementSelected) {
-            var mousePosition = [e.offsetX, e.offsetY];
-            var xPosition = elementSelected[1].pivots[elementSelected[2]].x;
-            var yPosition = elementSelected[1].pivots[elementSelected[2]].y;
-            elementSelected.position = add([xPosition, yPosition], mousePosition);
-            console.log("moving element");
-        }
-      
-        // moveAt(e.pageX, e.pageY);
-      
-        // // centers the canvas at (pageX, pageY) coordinates
-        // // function moveAt(pageX, pageY) {
-        // //   canvas.style.left = pageX - canvas.offsetWidth / 2 + 'px';
-        // //   canvas.style.top = pageY - canvas.offsetHeight / 2 + 'px';
-        // // }
-      
-        // function onMouseMove(e) {
-        //   moveAt(e.pageX, e.pageY);
+        // console.log("> on mouse move, element selected: "+ elementSelected);
+        // if (elementSelected !== null) {
+        //     nodes[0].position = {x: e.offsetX, y: e.offsetY};
+            // console.log("On mouse move, position of the node: "+ nodes[0].position.x)
+            // console.log("On node, port position: "+ nodes[0].getPortPosition(0).x,  nodes[0].getPortPosition(0).y)
         // }
-      
-        // (3) move the canvas on mousemove
-        // document.addeListener('mousemove', onMouseMove);
-      
-        // // (4) drop the canvas, remove unneeded handlers
-        // canvas.onmouseup = function() {
-        //   document.removeeListener('mousemove', onMouseMove);
-        //   canvas.onmouseup = null;
-        // };
-      
-      };
+    }
+}
+
+/**
+ * TODO: a node must be clicked to move on the screen
+ * I'm trying to update a position on key pressed =/
+ */
+
+window.addEventListener("keydown", keysPressed, false);
+window.addEventListener("keyup", keysReleased, false);
+
+var keys = [];
+
+function keysPressed(e) {
+    // store an entry for every key pressed
+    keys[e.keyCode] = true;
+    if (elementSelected) {
+        var elementToMove = null;
+        if (elementSelected[0] === "pivot") {
+            elementToMove = elementSelected[1].pivots[elementSelected[2]]; // pivot related to one port in one node
+        } else {
+            elementToMove = elementSelected.position;
+        }
+
+        // left
+        if (keys[37]) {
+            elementToMove.x -= 5;
+        }
+
+        // right
+        if (keys[39]) {
+            elementToMove.x += 5;
+        }
+
+        // down
+        if (keys[38]) {
+            elementToMove.y -= 5;
+        }
+
+        // up
+        if (keys[40]) {
+            elementToMove.y += 5;
+        }
+
+    }
+ 
+    e.preventDefault();
 
 }
+
+function keysReleased(e) {
+    // mark keys that were released
+    keys[e.keyCode] = false;
+}
+
 
 
 
@@ -169,22 +200,6 @@ function makeNodes() {
     connectPorts([node4, 1], [node4, 2]);
 
     return nodes;
-}
-
-
-function moveElement(e) {
-    var x = e.which || e.keyCode;
-    switch (x) {
-        case 97: // letter "a", moves to the left
-            elementSelected.position = elementSelected.position.x - 5; 
-            console.log("Key a pressed");
-            break;
-        case 110:
-            break;
-        default:
-         console.log("other keyboard clicked");
-    }
-    
 }
 
 
@@ -235,8 +250,7 @@ function setInitialPositionForPivots() {
         for (var j = 0; j < 3; j++) {
             nodes[i].pivots[j] = nodes[i].getPortPosition(j);
         } 
-    }
-    
+    }  
 }
 
 // Draw the shape of a triangle according to it's ports and it's connections
