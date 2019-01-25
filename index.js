@@ -86,7 +86,7 @@ window.onload = function() {
 
         // Check if the initial node was clicked
         var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
-        if (distanceFromInitialNode <= maxRadiusDistance){
+        if (distanceFromInitialNode <= maxRadiusDistance) {
             elementSelected = ["initialNode"];
         } else {
             for (var i = 0; i < nodes.length; i++) {    
@@ -114,12 +114,13 @@ window.onload = function() {
             // Check the type of the element selected
             if (elementSelected[0] === "node") {
                 node.position = positionClicked
+                updatePivotsPosition(node);
             } else if (elementSelected[0] === "pivot") {
                 var pivotPort = elementSelected[2];
                 node.pivots[pivotPort] = positionClicked;
             } else {
                 initialNode.position = positionClicked;
-            }
+            }     
         }  
     }
 
@@ -142,6 +143,8 @@ function keysPressed(e) {
         if (keys[37]) { elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5) }
         // right
         if (keys[39]) { elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5); }
+
+        updatePivotsPosition(elementToRotate);
     }
     // e.preventDefault();
 }
@@ -220,10 +223,26 @@ function connectPorts([nodeA, slotA], [nodeB, slotB]) {
     nodeB.ports[slotB] = [nodeA, slotA];
 }
 
-function connectToInitialNode([nodeA, slotA]){
+function connectToInitialNode([nodeA, slotA]) {
     nodeA.ports[slotA] = [initialNode, 0];
     initialNode.ports[0] = [nodeA, slotA];
 }
+
+
+function setInitialPositionForPivots() { 
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = 0; j < 3; j++) {
+            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
+        } 
+    }  
+}
+
+function updatePivotsPosition(node) {
+    for (var i = 0; i < 3; i++) {
+        node.pivots[i] = node.getPortPosition(i);
+    } 
+}
+
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
@@ -242,14 +261,6 @@ function drawInitialNode(context) {
     context.arc(initialNode.position.x, initialNode.position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
-}
-
-function setInitialPositionForPivots() { 
-    for (var i = 0; i < nodes.length; i++) {
-        for (var j = 0; j < 3; j++) {
-            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
-        } 
-    }  
 }
 
 // Draw the shape of a triangle according to it's ports and it's connections
