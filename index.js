@@ -10,7 +10,6 @@ class Node {
     }
 
     getPortPosition(slot) {
-        // var add_angle = [0, Math.PI * 2 / 3, Math.PI * 4 / 3][slot];
         var add_angle = [0, getRadianFromAngle(240), getRadianFromAngle(120)][slot];
         var position = add([this.position.x, this.position.y], rotate([this.radius, 0], this.angle + add_angle));
         return {x: position[0], y: position[1]};
@@ -30,6 +29,7 @@ var elementSelected = null;
 // A node that will change it's angle
 // Type node: ["node", node]
 var elementToRotate = null;
+var elementoMoving = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
 var selectionColor = 'green';
 
 // Nodes
@@ -59,7 +59,7 @@ window.onload = function() {
 
     }, 1000/30);
     
-    // Select node to rotate
+    // -- Rotation -- 
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
@@ -71,7 +71,7 @@ window.onload = function() {
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
             if (distanceFromNode <= maxRadiusDistance) {
                 elementToRotate = nodes[i];
-                console.log("Element to rotate: "+ i);
+                elementoMoving.push(elementToRotate.position);
             }     
         }
 
@@ -94,6 +94,7 @@ window.onload = function() {
                 var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
                 if (distanceFromNode <= maxRadiusDistance) {
                     elementSelected = ["node", nodes[i]];
+                    elementoMoving.push(nodes[i].position);
                 }     
                 // Check if any pivot was clicked
                 for (var j = 0; j < 3; j++) {            
@@ -144,9 +145,16 @@ function keysPressed(e) {
         // right
         if (keys[39]) { elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5); }
 
+        // ctrl+z or cmd+z
+        if (keys[90]) {
+            elementoMoving.pop(); // removes the actual position
+            if (elementoMoving.length > 0) {
+                elementToRotate.position = elementoMoving.pop();
+            } 
+        }
+
         updatePivotsPosition(elementToRotate);
     }
-    // e.preventDefault();
 }
 
 function keysReleased(e) {
