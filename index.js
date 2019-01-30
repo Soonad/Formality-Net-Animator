@@ -1,6 +1,6 @@
 class Node {
-    constructor(type, position, angle) {
-        this.type = type; // 0: initial, 1: white node, 2: black node
+    constructor(label, position, angle) {
+        this.label = label; // 0: initial, 1: white node, 2: black node
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
@@ -29,8 +29,9 @@ const width = 400;
 var elementSelected = null; 
 // A node that will change it's angle
 // Type node: ["node", node]
-var elementToRotate = null;
-var elementoMoving = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
+var elementClicked = null;
+var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
+
 var selectionColor = 'green';
 
 // Nodes
@@ -52,11 +53,6 @@ window.onload = function() {
         drawInitialNode(context);
 
         for (node of nodes) {    
-            if (node.type == 2) {
-                context.strokeStyle = 'blue';
-            } else {
-                context.strokeStyle = 'black'; 
-            }
             drawElements(context, node); 
         };
 
@@ -66,18 +62,20 @@ window.onload = function() {
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
-
-        elementToRotate = null;
+        elementClicked = null;
 
         for (var i = 0; i < nodes.length; i++) {    
             // Checks if any node was clicked 
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
             if (distanceFromNode <= maxRadiusDistance) {
-                elementToRotate = nodes[i];
-                elementoMoving.push(elementToRotate.position);
-            }     
+                elementClicked = nodes[i];
+                prevPositionMovement.push(elementClicked.position);
+                // If clicking holding command
+                if (e.metaKey) {
+                    checkTransformation(elementClicked);     
+                } 
+            } 
         }
-
     }
     // -- Drag and drop actions --
     canvas.onmousedown = function(e) {
@@ -85,7 +83,7 @@ window.onload = function() {
         var maxRadiusDistance = 10;
 
         elementSelected = null;
-        elementToRotate = null;
+        elementClicked = null;
 
         // Check if the initial node was clicked
         var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
@@ -97,7 +95,7 @@ window.onload = function() {
                 var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
                 if (distanceFromNode <= maxRadiusDistance) {
                     elementSelected = ["node", nodes[i]];
-                    elementoMoving.push(nodes[i].position);
+                    prevPositionMovement.push(nodes[i].position);
                 }     
                 // Check if any pivot was clicked
                 for (var j = 0; j < 3; j++) {            
@@ -136,45 +134,115 @@ window.onload = function() {
 // --- Keyboard actions --- 
 window.addEventListener("keydown", keysPressed, false);
 
-function keysPressed(e) {
-    var x = e.keyCode;
+var ctrlPressed = false;
 
-    if (elementToRotate) {
-        switch (x) {
+function keysPressed(e) {
+    var key = e.keyCode;
+
+    if (elementClicked) {
+        switch (key) {
             case (37): // left
-                elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5) 
+                elementClicked.angle = elementClicked.angle - getRadianFromAngle(5) 
                 break;
             case (39): // right
-                elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5);
+                elementClicked.angle = elementClicked.angle + getRadianFromAngle(5);
                 break;
             case (90): // ctr+z or cmd+z
-                elementoMoving.pop(); // removes the actual position
-                if (elementoMoving.length > 0) {
-                    elementToRotate.position = elementoMoving.pop();
+                elementMoving.pop(); // removes the actual position
+                if (prevPositionMovement.length > 0) {
+                    elementClicked.position = elementoMoving.pop();
                 } 
                 break;
         }
-        updatePivotsPosition(elementToRotate);
+        updatePivotsPosition(elementClicked);
     }
-
-    if (x === 32) { // space bar
-
-        // keyframes.push(nodes_copy);
-        console.log("Keyframe:");
-        console.log(keyframes);
-        // console.log("Node 0 in nodes: "+nodes[0].position.x);    
-    }
-
-    if (x === 91) { // crtl+k or cmd+k: undo a keyframe saving
-        console.log("Undo keyframe");
+    
+    switch (key) {
+        case (91): // ctrl or command
+        case (93):
+            ctrlPressed = true;
+        break;
+        case (32):
+            // keyframes.push(nodes_copy);
+            console.log("Keyframe:");
+            console.log(keyframes);
+            // console.log("Node 0 in nodes: "+nodes[0].position.x); 
+        break;
     }
 }
 
-function makeACopy() {
-    var copy = []; 
-    var node_copy = Node(nodes[0].type, nodes[0].position, nodes[0].angle); //type, position, angle
-    copy.push(node_copy);
+function keysReleased(e) {
+    keys[e.keyCode] = false;
+}
 
+// -- Transformation -- 
+/*
+    Evaluate if the node clicked can do a transformation. There are 2 types:
+    1- Nodes with the same label: reduction
+    2- Nodes with different labels: duplication
+*/
+function checkTransformation(node) {
+    var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
+    
+    if (pairToTransform.ports[0][0] === node && pairToTransform !== initialNode) { // check if the other node on port 0 is equal to the current node
+        if (node.label === pairToTransform.label) { // reduction
+            reduceNodes(node, pairToTransform);
+        } else { // duplication
+            duplicateNodes(node, pairToTransform);
+        }
+    }
+}
+
+//  -- Reduction -- 
+// Occurs between nodes with the same label. Rewrite the ports for both Nodes taking place the ports of the other one.
+function reduceNodes(nodeA, nodeB) {
+    // ports have the type: [node, portNumber]
+    for (var i = 1; i < 3; i++) {
+        // get the node associated with Port 1
+        var nodeA_port_dest = nodeA.ports[i][0]; 
+        var nodeB_port_dest = nodeB.ports[i][0];
+        // new port that Port1 has to connect
+        var a_destPort = nodeA.ports[i][1]; 
+        var b_destPort = nodeB.ports[i][1];
+        connectPorts([nodeA_port_dest, a_destPort], [nodeB_port_dest, b_destPort]);
+    }
+    // remove the reduced nodes from the array of nodes
+    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
+}
+
+// -- Duplication --
+// Occurs between nodes with different labels. The nodes pass through each-other, duplicating themselves
+function duplicateNodes(nodeA, nodeB) {
+    var xPositionLeft = nodeA.position.x - (nodeA.radius * 1.2);
+    var xPositionRight = nodeA.position.x + (nodeA.radius * 1.2);
+    var yPositionUp = nodeA.position.y;
+    var yPositionDown = nodeA.position.y + (nodeA.radius * 2.5);
+
+    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());
+    var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle());
+    var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle(90));
+    var nodeB_rightDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle(90));
+
+    nodes.push(nodeA_leftUp);
+    nodes.push(nodeA_rightUp);
+    nodes.push(nodeB_leftDown);
+    nodes.push(nodeB_rightDown);
+
+    connectPorts([nodeA_leftUp, 0], [nodeB.ports[1][0], nodeB.ports[1][1]]);
+    connectPorts([nodeA_rightUp, 0], [nodeB.ports[2][0], nodeB.ports[2][1]]);
+
+    connectPorts([nodeA_leftUp, 1], [nodeB_leftDown, 2]);
+    connectPorts([nodeA_leftUp, 2], [nodeB_rightDown, 2]);
+
+    connectPorts([nodeA_rightUp, 1], [nodeB_leftDown, 1]);
+    connectPorts([nodeA_rightUp, 2], [nodeB_rightDown, 1]);
+
+    connectPorts([nodeB_leftDown, 0],[nodeA.ports[2][0], nodeA.ports[2][1]]);
+    connectPorts([nodeB_rightDown, 0],[nodeA.ports[1][0], nodeA.ports[1][1]]);
+
+    // remove the reduced nodes from the array of nodes
+    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
+    setInitialPositionForPivots();
 }
 
 
@@ -289,15 +357,20 @@ function drawInitialNode(context) {
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
 
-    context.strokeStyle = 'black';   
+    if (node.label == 2) {
+        context.strokeStyle = 'blue';
+    } else {
+        context.strokeStyle = 'black'; 
+    }  
+
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
             context.strokeStyle = selectionColor; 
         }
     }
-    if (elementToRotate) {
-        if (elementToRotate === node) {
+    if (elementClicked) {
+        if (elementClicked === node) {
             context.strokeStyle = selectionColor; 
         }
     }
@@ -328,7 +401,7 @@ function drawElements(context, node) {
 
         var nodeToConnect = node.ports[i][0];
         var slotToConnect = node.ports[i][1];
-        if (nodeToConnect.type !== 0) {
+        if (nodeToConnect.label !== 0) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
