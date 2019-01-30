@@ -232,17 +232,13 @@ function duplicateNodes(nodeA, nodeB) {
     connectPorts([nodeA_rightUp, 1], [nodeB_leftDown, 1]);
     connectPorts([nodeA_rightUp, 2], [nodeB_rightDown, 1]);
 
-    // connectPorts([nodeB_leftDown, 0],[nodeB.ports[1][0], nodeB.ports[1][1]]);
-    // connectPorts([nodeB_rightDown, 0],[nodeB.ports[2][0], nodeB.ports[2][1]]);
     connectPorts([nodeB_leftDown, 0],[nodeA.ports[2][0], nodeA.ports[2][1]]);
     connectPorts([nodeB_rightDown, 0],[nodeA.ports[1][0], nodeA.ports[1][1]]);
 
     // remove the reduced nodes from the array of nodes
     nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
     setInitialPositionForPivots();
-    console.log(nodes);
 }
-
 
 
 // Defines the properties of each node
