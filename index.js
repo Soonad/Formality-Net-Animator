@@ -4,7 +4,7 @@ class Node {
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
-        // Pivots starts in the same positon as the ports
+        // Pivots starts in the same positon as the ports. Each index of the array represents a port. 
         this.pivots = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
         this.radius = 20;
     }
@@ -16,6 +16,7 @@ class Node {
     }
 
 }
+
 
 // Size for canvas element
 const height = 400;
@@ -36,6 +37,8 @@ var selectionColor = 'green';
 var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
 var nodes = makeNodes();
 
+// An Node array recording the changes of the positions 
+var keyframes = []; // [[node0, node1, node2..], [node0, node1, node2...] ...]
 
 window.onload = function() {
     var canvas = document.getElementById("canvas");
@@ -130,37 +133,49 @@ window.onload = function() {
     }
 }
 
+// --- Keyboard actions --- 
 window.addEventListener("keydown", keysPressed, false);
-window.addEventListener("keyup", keysReleased, false);
-
-var keys = [];
 
 function keysPressed(e) {
-    // store an entry for every key pressed
-    keys[e.keyCode] = true;
+    var x = e.keyCode;
 
     if (elementToRotate) {
-        // left
-        if (keys[37]) { elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5) }
-        // right
-        if (keys[39]) { elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5); }
-
-        // ctrl+z or cmd+z
-        if (keys[90]) {
-            elementoMoving.pop(); // removes the actual position
-            if (elementoMoving.length > 0) {
-                elementToRotate.position = elementoMoving.pop();
-            } 
+        switch (x) {
+            case (37): // left
+                elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5) 
+                break;
+            case (39): // right
+                elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5);
+                break;
+            case (90): // ctr+z or cmd+z
+                elementoMoving.pop(); // removes the actual position
+                if (elementoMoving.length > 0) {
+                    elementToRotate.position = elementoMoving.pop();
+                } 
+                break;
         }
-
         updatePivotsPosition(elementToRotate);
+    }
+
+    if (x === 32) { // space bar
+
+        // keyframes.push(nodes_copy);
+        console.log("Keyframe:");
+        console.log(keyframes);
+        // console.log("Node 0 in nodes: "+nodes[0].position.x);    
+    }
+
+    if (x === 91) { // crtl+k or cmd+k: undo a keyframe saving
+        console.log("Undo keyframe");
     }
 }
 
-function keysReleased(e) {
-    keys[e.keyCode] = false;
-}
+function makeACopy() {
+    var copy = []; 
+    var node_copy = Node(nodes[0].type, nodes[0].position, nodes[0].angle); //type, position, angle
+    copy.push(node_copy);
 
+}
 
 
 // Defines the properties of each node
