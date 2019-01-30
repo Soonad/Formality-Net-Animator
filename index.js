@@ -49,11 +49,6 @@ window.onload = function() {
         drawInitialNode(context);
 
         for (node of nodes) {    
-            if (node.type == 2) {
-                context.strokeStyle = 'blue';
-            } else {
-                context.strokeStyle = 'black'; 
-            }
             drawElements(context, node); 
         };
 
@@ -274,7 +269,12 @@ function drawInitialNode(context) {
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
 
-    context.strokeStyle = 'black';   
+    if (node.type == 2) {
+        context.strokeStyle = 'blue';
+    } else {
+        context.strokeStyle = 'black'; 
+    }  
+
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
