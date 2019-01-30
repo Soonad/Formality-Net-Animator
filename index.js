@@ -1,6 +1,6 @@
 class Node {
-    constructor(type, position, angle) {
-        this.type = type; // 0: initial, 1: white node, 2: black node
+    constructor(label, position, angle) {
+        this.label = label; // 0: initial, 1: white node, 2: black node
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
@@ -28,8 +28,10 @@ const width = 400;
 var elementSelected = null; 
 // A node that will change it's angle
 // Type node: ["node", node]
-var elementToRotate = null;
-var elementoMoving = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
+var elementClicked = null;
+var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
+var nodesSelectedToReduction = [];
+
 var selectionColor = 'green';
 
 // Nodes
@@ -58,18 +60,22 @@ window.onload = function() {
     canvas.onclick = function(e) {
         var positionClicked = [e.offsetX, e.offsetY];
         var maxRadiusDistance = 10;
-
-        elementToRotate = null;
+        elementClicked = null;
 
         for (var i = 0; i < nodes.length; i++) {    
             // Checks if any node was clicked 
             var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
             if (distanceFromNode <= maxRadiusDistance) {
-                elementToRotate = nodes[i];
-                elementoMoving.push(elementToRotate.position);
-            }     
+                elementClicked = nodes[i];
+                prevPositionMovement.push(elementClicked.position);
+                // If clicking holding command
+                if (e.metaKey) {
+                    console.log("Adding node to reduction");
+                    nodesSelectedToReduction.push(elementClicked);
+                    checkReduction();     
+                } 
+            } 
         }
-
     }
     // -- Drag and drop actions --
     canvas.onmousedown = function(e) {
@@ -77,7 +83,7 @@ window.onload = function() {
         var maxRadiusDistance = 10;
 
         elementSelected = null;
-        elementToRotate = null;
+        elementClicked = null;
 
         // Check if the initial node was clicked
         var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
@@ -89,7 +95,7 @@ window.onload = function() {
                 var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
                 if (distanceFromNode <= maxRadiusDistance) {
                     elementSelected = ["node", nodes[i]];
-                    elementoMoving.push(nodes[i].position);
+                    prevPositionMovement.push(nodes[i].position);
                 }     
                 // Check if any pivot was clicked
                 for (var j = 0; j < 3; j++) {            
@@ -128,32 +134,66 @@ window.onload = function() {
 window.addEventListener("keydown", keysPressed, false);
 window.addEventListener("keyup", keysReleased, false);
 
+var ctrlPressed = false;
+
 var keys = [];
 
 function keysPressed(e) {
     // store an entry for every key pressed
     keys[e.keyCode] = true;
+    var key = e.keyCode;
 
-    if (elementToRotate) {
+    if (elementClicked) {
         // left
-        if (keys[37]) { elementToRotate.angle = elementToRotate.angle + getRadianFromAngle(5) }
+        if (keys[37]) { elementClicked.angle = elementClicked.angle + getRadianFromAngle(5) }
         // right
-        if (keys[39]) { elementToRotate.angle = elementToRotate.angle - getRadianFromAngle(5); }
+        if (keys[39]) { elementClicked.angle = elementClicked.angle - getRadianFromAngle(5); }
 
         // ctrl+z or cmd+z
         if (keys[90]) {
-            elementoMoving.pop(); // removes the actual position
-            if (elementoMoving.length > 0) {
-                elementToRotate.position = elementoMoving.pop();
+            prevPositionMovement.pop(); // removes the actual position
+            if (prevPositionMovement.length > 0) {
+                elementClicked.position = prevPositionMovement.pop();
             } 
         }
+        updatePivotsPosition(elementClicked);
+    }
 
-        updatePivotsPosition(elementToRotate);
+
+    switch (key) {
+        case (82): // letter r
+            console.log("Letter r pressed");
+        break;
+
+        case (91): // ctrl or command
+        case (93):
+            ctrlPressed = true;
+        break;
     }
 }
 
 function keysReleased(e) {
     keys[e.keyCode] = false;
+    ctrlPressed = false;
+}
+
+// -- Reduce nodes -- 
+// Reductions can only occur between 2 nodes of the same type if bo
+function checkReduction() {
+    console.log(nodesSelectedToReduction.length);
+    if (nodesSelectedToReduction.length === 2) {
+        if (nodesSelectedToReduction[0].label === nodesSelectedToReduction[1].label) { // check if both nodes are of the same type
+            var distance = getDistanceBetween([nodesSelectedToReduction[0].getPortPosition(0).x, nodesSelectedToReduction[0].getPortPosition(0).y], 
+            [nodesSelectedToReduction[1].getPortPosition(0).x, nodesSelectedToReduction[1].getPortPosition(0).y]);
+            console.log(distance);
+            if (distance <= 15) { // The ports 0 are touching
+                console.log("Both nodes had touched!!");
+                nodesSelectedToReduction = []; // clear the elements to reduct
+            }       
+        } else {
+            nodesSelectedToReduction = [];
+        }
+    }
 }
 
 
@@ -269,7 +309,7 @@ function drawInitialNode(context) {
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
 
-    if (node.type == 2) {
+    if (node.label == 2) {
         context.strokeStyle = 'blue';
     } else {
         context.strokeStyle = 'black'; 
@@ -281,8 +321,8 @@ function drawElements(context, node) {
             context.strokeStyle = selectionColor; 
         }
     }
-    if (elementToRotate) {
-        if (elementToRotate === node) {
+    if (elementClicked) {
+        if (elementClicked === node) {
             context.strokeStyle = selectionColor; 
         }
     }
@@ -313,7 +353,7 @@ function drawElements(context, node) {
 
         var nodeToConnect = node.ports[i][0];
         var slotToConnect = node.ports[i][1];
-        if (nodeToConnect.type !== 0) {
+        if (nodeToConnect.label !== 0) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
