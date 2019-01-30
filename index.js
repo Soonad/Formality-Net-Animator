@@ -70,7 +70,6 @@ window.onload = function() {
                 prevPositionMovement.push(elementClicked.position);
                 // If clicking holding command
                 if (e.metaKey) {
-                    console.log("Adding node to reduction");
                     nodesSelectedToReduction.push(elementClicked);
                     checkReduction();     
                 } 
@@ -177,25 +176,40 @@ function keysReleased(e) {
     ctrlPressed = false;
 }
 
+
 // -- Reduce nodes -- 
 // Reductions can only occur between 2 nodes of the same type if bo
 function checkReduction() {
-    console.log(nodesSelectedToReduction.length);
     if (nodesSelectedToReduction.length === 2) {
-        if (nodesSelectedToReduction[0].label === nodesSelectedToReduction[1].label) { // check if both nodes are of the same type
-            var distance = getDistanceBetween([nodesSelectedToReduction[0].getPortPosition(0).x, nodesSelectedToReduction[0].getPortPosition(0).y], 
-            [nodesSelectedToReduction[1].getPortPosition(0).x, nodesSelectedToReduction[1].getPortPosition(0).y]);
-            console.log(distance);
-            if (distance <= 15) { // The ports 0 are touching
-                console.log("Both nodes had touched!!");
-                nodesSelectedToReduction = []; // clear the elements to reduct
-            }       
+        var nodeA = nodesSelectedToReduction[0];
+        var nodeB = nodesSelectedToReduction[1];
+        if (nodeA.label === nodeB.label && nodeA !== nodeB) { // check if both nodes are of the same type
+            reduceNodes(nodeA, nodeB);
         } else {
             nodesSelectedToReduction = [];
         }
     }
 }
 
+// Rewrite the ports for both Nodes taking place the ports of the other one.
+function reduceNodes(nodeA, nodeB) {
+    reconnectPortsReduction(nodeA, nodeB);
+    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); // remove the reduced nodes from the array of nodes
+    nodesSelectedToReduction = [];
+}
+
+function reconnectPortsReduction(nodeA, nodeB) {
+    // ports have the type: [node, portNumber]
+    for (var i = 1; i < 3; i++) {
+        // get the node associated with Port 1
+        var nodeA_port_dest = nodeA.ports[i][0]; 
+        var nodeB_port_dest = nodeB.ports[i][0];
+        // new port that Port1 has to connect
+        var a_destPort = nodeA.ports[i][1]; 
+        var b_destPort = nodeB.ports[i][1];
+        connectPorts([nodeA_port_dest, a_destPort], [nodeB_port_dest, b_destPort]);
+    }
+}
 
 
 // Defines the properties of each node
