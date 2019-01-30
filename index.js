@@ -30,7 +30,6 @@ var elementSelected = null;
 // Type node: ["node", node]
 var elementClicked = null;
 var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
-var nodesSelectedToReduction = [];
 
 var selectionColor = 'green';
 
@@ -70,8 +69,7 @@ window.onload = function() {
                 prevPositionMovement.push(elementClicked.position);
                 // If clicking holding command
                 if (e.metaKey) {
-                    nodesSelectedToReduction.push(elementClicked);
-                    checkReduction();     
+                    checkTransformation(elementClicked);     
                 } 
             } 
         }
@@ -176,22 +174,25 @@ function keysReleased(e) {
     ctrlPressed = false;
 }
 
-
-// -- Reduce nodes -- 
-// Reductions can only occur between 2 nodes of the same type if bo
-function checkReduction() {
-    if (nodesSelectedToReduction.length === 2) {
-        var nodeA = nodesSelectedToReduction[0];
-        var nodeB = nodesSelectedToReduction[1];
-        if (nodeA.label === nodeB.label && nodeA !== nodeB) { // check if both nodes are of the same type
-            reduceNodes(nodeA, nodeB);
-        } else {
-            nodesSelectedToReduction = [];
-        }
+// -- Transformation -- 
+/*
+    Evaluate if the node clicked can do a transformation. There are 2 types:
+    1- Nodes with the same label: reduction
+    2- Nodes with different labels: duplication
+*/
+function checkTransformation(node) {
+    var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
+    // Reduction
+    if (node.label === pairToTransform.label && 
+        pairToTransform.ports[0][0] === node) { // check if the other node on port 0 is equal to the current node
+        reduceNodes(node, pairToTransform);
+    } else {  // duplication
+       
     }
 }
 
-// Rewrite the ports for both Nodes taking place the ports of the other one.
+// Reduction
+// Occurs between nodes with the same label. Rewrite the ports for both Nodes taking place the ports of the other one.
 function reduceNodes(nodeA, nodeB) {
     reconnectPortsReduction(nodeA, nodeB);
     nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); // remove the reduced nodes from the array of nodes
