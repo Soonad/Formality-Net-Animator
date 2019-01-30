@@ -179,7 +179,7 @@ function keysReleased(e) {
 function checkTransformation(node) {
     var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
     
-    if (pairToTransform.ports[0][0] === node) { // check if the other node on port 0 is equal to the current node
+    if (pairToTransform.ports[0][0] === node && pairToTransform !== initialNode) { // check if the other node on port 0 is equal to the current node
         if (node.label === pairToTransform.label) { // reduction
             reduceNodes(node, pairToTransform);
         } else { // duplication
@@ -189,14 +189,8 @@ function checkTransformation(node) {
 }
 
 //  -- Reduction -- 
-// Occurs between nodes with the same label. 
+// Occurs between nodes with the same label. Rewrite the ports for both Nodes taking place the ports of the other one.
 function reduceNodes(nodeA, nodeB) {
-    reconnectPortsReduction(nodeA, nodeB);
-    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); // remove the reduced nodes from the array of nodes
-}
-
-// Rewrite the ports for both Nodes taking place the ports of the other one.
-function reconnectPortsReduction(nodeA, nodeB) {
     // ports have the type: [node, portNumber]
     for (var i = 1; i < 3; i++) {
         // get the node associated with Port 1
@@ -207,31 +201,48 @@ function reconnectPortsReduction(nodeA, nodeB) {
         var b_destPort = nodeB.ports[i][1];
         connectPorts([nodeA_port_dest, a_destPort], [nodeB_port_dest, b_destPort]);
     }
+    // remove the reduced nodes from the array of nodes
+    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
 }
 
-// -- Duplication
+// -- Duplication --
 // Occurs between nodes with different labels. The nodes pass through each-other, duplicating themselves
 function duplicateNodes(nodeA, nodeB) {
-    reconectPortsDuplication(nodeA, nodeB);
-    
-}
-
-function reconectPortsDuplication(nodeA, nodeB) {
     var xPositionLeft = nodeA.position.x - (nodeA.radius * 1.2);
     var xPositionRight = nodeA.position.x + (nodeA.radius * 1.2);
     var yPositionUp = nodeA.position.y;
-    var yPositionDown = nodeA.position.y - (nodeA.radius * 2.5);
+    var yPositionDown = nodeA.position.y + (nodeA.radius * 2.5);
 
-    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle(90));
-    var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle(90));
-    var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle());
-    var nodeB_righDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle());
+    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());
+    var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle());
+    var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle(90));
+    var nodeB_rightDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle(90));
 
     nodes.push(nodeA_leftUp);
     nodes.push(nodeA_rightUp);
     nodes.push(nodeB_leftDown);
-    nodes.push(nodeB_righDown);
+    nodes.push(nodeB_rightDown);
+
+    connectPorts([nodeA_leftUp, 0], [nodeB.ports[1][0], nodeB.ports[1][1]]);
+    connectPorts([nodeA_rightUp, 0], [nodeB.ports[2][0], nodeB.ports[2][1]]);
+
+    connectPorts([nodeA_leftUp, 1], [nodeB_leftDown, 2]);
+    connectPorts([nodeA_leftUp, 2], [nodeB_rightDown, 2]);
+
+    connectPorts([nodeA_rightUp, 1], [nodeB_leftDown, 1]);
+    connectPorts([nodeA_rightUp, 2], [nodeB_rightDown, 1]);
+
+    // connectPorts([nodeB_leftDown, 0],[nodeB.ports[1][0], nodeB.ports[1][1]]);
+    // connectPorts([nodeB_rightDown, 0],[nodeB.ports[2][0], nodeB.ports[2][1]]);
+    connectPorts([nodeB_leftDown, 0],[nodeA.ports[2][0], nodeA.ports[2][1]]);
+    connectPorts([nodeB_rightDown, 0],[nodeA.ports[1][0], nodeA.ports[1][1]]);
+
+    // remove the reduced nodes from the array of nodes
+    nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
+    setInitialPositionForPivots();
+    console.log(nodes);
 }
+
 
 
 // Defines the properties of each node
