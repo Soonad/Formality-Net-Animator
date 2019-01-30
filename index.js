@@ -158,10 +158,6 @@ function keysPressed(e) {
 
 
     switch (key) {
-        case (82): // letter r
-            console.log("Letter r pressed");
-        break;
-
         case (91): // ctrl or command
         case (93):
             ctrlPressed = true;
@@ -182,23 +178,24 @@ function keysReleased(e) {
 */
 function checkTransformation(node) {
     var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
-    // Reduction
-    if (node.label === pairToTransform.label && 
-        pairToTransform.ports[0][0] === node) { // check if the other node on port 0 is equal to the current node
-        reduceNodes(node, pairToTransform);
-    } else {  // duplication
-       
+    
+    if (pairToTransform.ports[0][0] === node) { // check if the other node on port 0 is equal to the current node
+        if (node.label === pairToTransform.label) { // reduction
+            reduceNodes(node, pairToTransform);
+        } else { // duplication
+            duplicateNodes(node, pairToTransform);
+        }
     }
 }
 
-// Reduction
-// Occurs between nodes with the same label. Rewrite the ports for both Nodes taking place the ports of the other one.
+//  -- Reduction -- 
+// Occurs between nodes with the same label. 
 function reduceNodes(nodeA, nodeB) {
     reconnectPortsReduction(nodeA, nodeB);
     nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); // remove the reduced nodes from the array of nodes
-    nodesSelectedToReduction = [];
 }
 
+// Rewrite the ports for both Nodes taking place the ports of the other one.
 function reconnectPortsReduction(nodeA, nodeB) {
     // ports have the type: [node, portNumber]
     for (var i = 1; i < 3; i++) {
@@ -210,6 +207,30 @@ function reconnectPortsReduction(nodeA, nodeB) {
         var b_destPort = nodeB.ports[i][1];
         connectPorts([nodeA_port_dest, a_destPort], [nodeB_port_dest, b_destPort]);
     }
+}
+
+// -- Duplication
+// Occurs between nodes with different labels. The nodes pass through each-other, duplicating themselves
+function duplicateNodes(nodeA, nodeB) {
+    reconectPortsDuplication(nodeA, nodeB);
+    
+}
+
+function reconectPortsDuplication(nodeA, nodeB) {
+    var xPositionLeft = nodeA.position.x - (nodeA.radius * 1.2);
+    var xPositionRight = nodeA.position.x + (nodeA.radius * 1.2);
+    var yPositionUp = nodeA.position.y;
+    var yPositionDown = nodeA.position.y - (nodeA.radius * 2.5);
+
+    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle(90));
+    var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle(90));
+    var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle());
+    var nodeB_righDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle());
+
+    nodes.push(nodeA_leftUp);
+    nodes.push(nodeA_rightUp);
+    nodes.push(nodeB_leftDown);
+    nodes.push(nodeB_righDown);
 }
 
 
