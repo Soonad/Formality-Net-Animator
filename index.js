@@ -183,61 +183,31 @@ function copyNodes() {
         node.id = nodes[i].id;
         copy.push(node);
     }
-    for (var i = 0; i < nodes.length; i++) {
-        // console.log("Filtering nodes: ");
-        // console.log(nodes.filter(node => (copy[i].id === nodes[i].ports[0][0].id)));
-
-        // var nodeForPort0 = nodes.filter(node => (node.id === nodes[i].ports[0][0].id));
-        // var port0connectsOnPort = nodeForPort0.ports[0][1];
-
-        // var nodeForPort1 = nodes.filter(node => node.id === nodes[i].ports[1][0].id);
-        // var port1connectsOnPort = nodeForPort0.ports[1][1];
-
-        // var nodeForPort2 = nodes.filter(node => node.id === nodes[i].ports[2][0].id);
-        // var port2connectsOnPort = nodeForPort0.ports[2][1];
-
-        // copy[i].ports = [[nodeForPort0, port0connectsOnPort], [nodeForPort1, port1connectsOnPort], [nodeForPort2, port2connectsOnPort]];
-    }
 
     for (var i = 0; i < nodes.length; i++) {
         for (var j = 0; j < nodes.length; j++) {
+            // Set infos for port 0
             if (nodes[i].ports[0][0].id === copy[j].id) {
                 var nodeForPort0 = copy[j];
                 var connectingOnPort = nodes[i].ports[0][1];
                 copy[i].ports[0] = [nodeForPort0, connectingOnPort];
-                // console.log("Copy of node "+i+"port 0:");
-                // console.log(copy[i].ports[0][0]);
-                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
             }
-
+            // Set infos for port 1
             if (nodes[i].ports[1][0].id === copy[j].id) {
                 var nodeForPort1 = copy[j];
                 var connectingOnPort = nodes[i].ports[0][1];
                 copy[i].ports[1] = [nodeForPort1, connectingOnPort];
-                // console.log("Found node for port 1");
-                // console.log(copy[j]);
-                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
             }
-
+            // Set infos for port 2
             if (nodes[i].ports[2][0].id === copy[j].id) {
                 var nodeForPort2 = copy[j];
                 var connectingOnPort = nodes[i].ports[0][1];
                 copy[i].ports[2] = [nodeForPort2, connectingOnPort];
-                // console.log("Found node for port 2");
-                // console.log(copy[j]);
-                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
             }
         }
     }
     setInitialPositionForPivots(copy);
-    console.log("Nodes");
-    console.log(nodes);
-    console.log("> Keyframes");
-    console.log(keyframes);
-    console.log(">>> Copy");
-    console.log(copy);
 
-    
     return copy;
 }
 
