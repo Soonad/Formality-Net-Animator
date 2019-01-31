@@ -1,5 +1,6 @@
 class Node {
     constructor(label, position, angle) {
+        this.id = null;
         this.label = label; // 0: initial, 1: white node, 2: black node
         this.position = position;
         this.angle = angle; // angle for port 0
@@ -36,6 +37,7 @@ var selectionColor = 'green';
 
 // Nodes
 var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
+initialNode.id = 00;
 var nodes = makeNodes();
 
 // An Node array recording the changes of the positions 
@@ -45,7 +47,7 @@ window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
     
-    setInitialPositionForPivots();
+    setInitialPositionForPivots(nodes);
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
@@ -156,14 +158,14 @@ function keysPressed(e) {
         }
         updatePivotsPosition(elementClicked);
     }
-    
+
     switch (key) {
         case (91): // ctrl or command
         case (93):
             ctrlPressed = true;
         break;
-        case (32):
-            // keyframes.push(nodes_copy);
+        case (32): // space bar
+            keyframes.push(copyNodes());
             console.log("Keyframe:");
             console.log(keyframes);
             // console.log("Node 0 in nodes: "+nodes[0].position.x); 
@@ -172,7 +174,31 @@ function keysPressed(e) {
 }
 
 function keysReleased(e) {
-    keys[e.keyCode] = false;
+    ctrlPressed = false
+}
+
+function copyNodes() {
+    var copy = [];
+    for (var i = 0; i < nodes.length; i++) {
+        var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
+        node.id = i;
+        copy.push(node);
+    }
+    for (var i = 0; i < copy.length; i++) {
+        for (var j = 0; j < nodes.length; j++) {
+            if (copy[i].id === nodes[j].id) {
+                var nodeIdPort0 = nodes[j].ports[0][0].id; // node id associated with port 0
+                var nodeIdPort1 = nodes[j].ports[1][0].id;
+                var nodeIdPort2 = nodes[j].ports[2][0].id;
+
+                connectPorts([copy[i], 0], [copy[nodeIdPort0], nodes[j].ports[0][1]]);
+                connectPorts([copy[i], 1], [copy[nodeIdPort1], nodes[j].ports[1][1]]);
+                connectPorts([copy[i], 2], [copy[nodeIdPort2], nodes[j].ports[2][1]]);
+            }
+        }
+    }
+    setInitialPositionForPivots(copy);
+    return copy;
 }
 
 // -- Transformation -- 
@@ -242,7 +268,7 @@ function duplicateNodes(nodeA, nodeB) {
 
     // remove the reduced nodes from the array of nodes
     nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
-    setInitialPositionForPivots();
+    setInitialPositionForPivots(nodes);
 }
 
 
@@ -268,10 +294,15 @@ function makeNodes() {
     var node4 = new Node(1, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
+    for (var i = 0; i < nodes.length; i++) {
+        nodes[i].id = i;
+    }
 
     // Connections between ports
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
+    // connectPorts([node0, 2],[initialNode, 0]);
+    // connectPorts([initialNode, 1], [initialNode, 2]);
     connectToInitialNode([node0, 2]);
 
     connectPorts([node1, 1], [node2, 0]);
@@ -320,10 +351,10 @@ function connectToInitialNode([nodeA, slotA]) {
 }
 
 
-function setInitialPositionForPivots() { 
-    for (var i = 0; i < nodes.length; i++) {
+function setInitialPositionForPivots(nodesArray) { 
+    for (var i = 0; i < nodesArray.length; i++) {
         for (var j = 0; j < 3; j++) {
-            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
+            nodesArray[i].pivots[j] = nodes[i].getPortPosition(j);
         } 
     }  
 }
@@ -358,11 +389,12 @@ function drawInitialNode(context) {
 function drawElements(context, node) {
 
     if (node.label == 2) {
-        context.strokeStyle = 'blue';
-    } else {
-        context.strokeStyle = 'black'; 
-    }  
-
+        context.beginPath();
+        context.arc(node.position.x, node.position.y, 3, 0, 2 * Math.PI);
+        context.fill();
+        context.stroke();
+    }
+    
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
