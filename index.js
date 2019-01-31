@@ -1,10 +1,11 @@
 class Node {
     constructor(label, position, angle) {
+        this.id = null;
         this.label = label; // 0: initial, 1: white node, 2: black node
         this.position = position;
         this.angle = angle; // angle for port 0
         this.ports = [null, null, null]; // [[node0, 0], [node1, 1], [node2, 2]]
-        // Pivots starts in the same positon as the ports
+        // Pivots starts in the same positon as the ports. Each index of the array represents a port. 
         this.pivots = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
         this.radius = 20;
     }
@@ -16,6 +17,7 @@ class Node {
     }
 
 }
+
 
 // Size for canvas element
 const height = 400;
@@ -32,25 +34,29 @@ var elementClicked = null;
 var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
 
 var selectionColor = 'green';
+var nodeIdCounter = 0;
 
 // Nodes
-var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
+// var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
+// initialNode.id = 00;
 var nodes = makeNodes();
 
+// An Node array recording the changes of the positions 
+var keyframes = []; // [[node0, node1, node2..], [node0, node1, node2...] ...]
 
 window.onload = function() {
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d"); 
     
-    setInitialPositionForPivots();
+    setInitialPositionForPivots(nodes);
+    keyframes.push(copyNodes());
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
         context.clearRect(0, 0, canvas.width, canvas.height);   
-        drawInitialNode(context);
 
-        for (node of nodes) {    
-            drawElements(context, node); 
+        for (var i = 0; i < nodes.length; i++) {    
+            drawElements(context, nodes[i]); 
         };
 
     }, 1000/30);
@@ -73,6 +79,7 @@ window.onload = function() {
                 } 
             } 
         }
+
     }
     // -- Drag and drop actions --
     canvas.onmousedown = function(e) {
@@ -83,7 +90,7 @@ window.onload = function() {
         elementClicked = null;
 
         // Check if the initial node was clicked
-        var distanceFromInitialNode = getDistanceBetween([initialNode.position.x, initialNode.position.y], positionClicked);
+        var distanceFromInitialNode = getDistanceBetween([nodes[0].position.x, nodes[0].position.y], positionClicked);
         if (distanceFromInitialNode <= maxRadiusDistance) {
             elementSelected = ["initialNode"];
         } else {
@@ -118,7 +125,7 @@ window.onload = function() {
                 var pivotPort = elementSelected[2];
                 node.pivots[pivotPort] = positionClicked;
             } else {
-                initialNode.position = positionClicked;
+                nodes[0].position = positionClicked;
             }     
         }  
     }
@@ -128,46 +135,110 @@ window.onload = function() {
     }
 }
 
+// --- Keyboard actions --- 
 window.addEventListener("keydown", keysPressed, false);
-window.addEventListener("keyup", keysReleased, false);
 
 var ctrlPressed = false;
 
-var keys = [];
-
 function keysPressed(e) {
-    // store an entry for every key pressed
-    keys[e.keyCode] = true;
     var key = e.keyCode;
 
     if (elementClicked) {
-        // left
-        if (keys[37]) { elementClicked.angle = elementClicked.angle + getRadianFromAngle(5) }
-        // right
-        if (keys[39]) { elementClicked.angle = elementClicked.angle - getRadianFromAngle(5); }
-
-        // ctrl+z or cmd+z
-        if (keys[90]) {
-            prevPositionMovement.pop(); // removes the actual position
-            if (prevPositionMovement.length > 0) {
-                elementClicked.position = prevPositionMovement.pop();
-            } 
+        switch (key) {
+            case (37): // left
+                elementClicked.angle = elementClicked.angle - getRadianFromAngle(5) 
+                break;
+            case (39): // right
+                elementClicked.angle = elementClicked.angle + getRadianFromAngle(5);
+                break;
+            case (90): // ctr+z or cmd+z
+                elementMoving.pop(); // removes the actual position
+                if (prevPositionMovement.length > 0) {
+                    elementClicked.position = elementoMoving.pop();
+                } 
+                break;
         }
         updatePivotsPosition(elementClicked);
     }
-
 
     switch (key) {
         case (91): // ctrl or command
         case (93):
             ctrlPressed = true;
         break;
+        case (32): // space bar
+            keyframes.push(copyNodes());
+        break;
     }
 }
 
 function keysReleased(e) {
-    keys[e.keyCode] = false;
-    ctrlPressed = false;
+    ctrlPressed = false
+}
+
+function copyNodes() {
+    var copy = [];
+    for (var i = 0; i < nodes.length; i++) {
+        var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
+        node.id = nodes[i].id;
+        copy.push(node);
+    }
+    for (var i = 0; i < nodes.length; i++) {
+        // console.log("Filtering nodes: ");
+        // console.log(nodes.filter(node => (copy[i].id === nodes[i].ports[0][0].id)));
+
+        // var nodeForPort0 = nodes.filter(node => (node.id === nodes[i].ports[0][0].id));
+        // var port0connectsOnPort = nodeForPort0.ports[0][1];
+
+        // var nodeForPort1 = nodes.filter(node => node.id === nodes[i].ports[1][0].id);
+        // var port1connectsOnPort = nodeForPort0.ports[1][1];
+
+        // var nodeForPort2 = nodes.filter(node => node.id === nodes[i].ports[2][0].id);
+        // var port2connectsOnPort = nodeForPort0.ports[2][1];
+
+        // copy[i].ports = [[nodeForPort0, port0connectsOnPort], [nodeForPort1, port1connectsOnPort], [nodeForPort2, port2connectsOnPort]];
+    }
+
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = 0; j < nodes.length; j++) {
+            if (nodes[i].ports[0][0].id === copy[j].id) {
+                var nodeForPort0 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[0] = [nodeForPort0, connectingOnPort];
+                // console.log("Copy of node "+i+"port 0:");
+                // console.log(copy[i].ports[0][0]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+
+            if (nodes[i].ports[1][0].id === copy[j].id) {
+                var nodeForPort1 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[1] = [nodeForPort1, connectingOnPort];
+                // console.log("Found node for port 1");
+                // console.log(copy[j]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+
+            if (nodes[i].ports[2][0].id === copy[j].id) {
+                var nodeForPort2 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[2] = [nodeForPort2, connectingOnPort];
+                // console.log("Found node for port 2");
+                // console.log(copy[j]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+        }
+    }
+    setInitialPositionForPivots(copy);
+    console.log("Nodes");
+    console.log(nodes);
+    console.log("> Keyframes");
+    console.log(keyframes);
+    console.log(">>> Copy");
+    console.log(copy);
+
+    
+    return copy;
 }
 
 // -- Transformation -- 
@@ -179,7 +250,8 @@ function keysReleased(e) {
 function checkTransformation(node) {
     var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
     
-    if (pairToTransform.ports[0][0] === node && pairToTransform !== initialNode) { // check if the other node on port 0 is equal to the current node
+    if (pairToTransform.ports[0][0] === node && // check if the other node on port 0 is equal to the current node
+        (node !== nodes[0] && pairToTransform !== nodes[0])) { // initial node don't reduce
         if (node.label === pairToTransform.label) { // reduction
             reduceNodes(node, pairToTransform);
         } else { // duplication
@@ -192,7 +264,7 @@ function checkTransformation(node) {
 // Occurs between nodes with the same label. Rewrite the ports for both Nodes taking place the ports of the other one.
 function reduceNodes(nodeA, nodeB) {
     // ports have the type: [node, portNumber]
-    for (var i = 1; i < 3; i++) {
+    for (var i = 0; i < 3; i++) {
         // get the node associated with Port 1
         var nodeA_port_dest = nodeA.ports[i][0]; 
         var nodeB_port_dest = nodeB.ports[i][0];
@@ -213,10 +285,15 @@ function duplicateNodes(nodeA, nodeB) {
     var yPositionUp = nodeA.position.y;
     var yPositionDown = nodeA.position.y + (nodeA.radius * 2.5);
 
-    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());
+    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());   
     var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle());
     var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle(90));
     var nodeB_rightDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle(90));
+
+    nodeA_leftUp.id = nodeIdCounter++;
+    nodeA_rightUp.id = nodeIdCounter++;
+    nodeB_leftDown.id = nodeIdCounter++;
+    nodeB_rightDown.id = nodeIdCounter++;
 
     nodes.push(nodeA_leftUp);
     nodes.push(nodeA_rightUp);
@@ -237,13 +314,16 @@ function duplicateNodes(nodeA, nodeB) {
 
     // remove the reduced nodes from the array of nodes
     nodes = nodes.filter(node => (node !== nodeA && node !== nodeB)); 
-    setInitialPositionForPivots();
+    setInitialPositionForPivots(nodes);
 }
 
 
 // Defines the properties of each node
 function makeNodes() {
     var nodes = [];
+
+    var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
+    nodes.push(initialNode);
 
     var node0 = new Node(1, {x: width * 0.5, y: height * 0.2}, getRadianFromAngle(90));
     nodes.push(node0);
@@ -263,11 +343,15 @@ function makeNodes() {
     var node4 = new Node(1, {x: width - (width * 0.3), y: height * 0.40}, getRadianFromAngle());
     nodes.push(node4);
 
+    for (var i = 0; i < nodes.length; i++) {
+        nodes[i].id = nodeIdCounter++;
+    }
 
     // Connections between ports
     connectPorts([node0, 0], [node1, 0]);
     connectPorts([node0, 1], [node4, 0]);
-    connectToInitialNode([node0, 2]);
+    connectPorts([node0, 2],[initialNode, 0]);
+    connectPorts([initialNode, 1], [initialNode, 2]);
 
     connectPorts([node1, 1], [node2, 0]);
     connectPorts([node1, 2], [node3, 2]);
@@ -315,10 +399,10 @@ function connectToInitialNode([nodeA, slotA]) {
 }
 
 
-function setInitialPositionForPivots() { 
-    for (var i = 0; i < nodes.length; i++) {
+function setInitialPositionForPivots(nodesArray) { 
+    for (var i = 0; i < nodesArray.length; i++) {
         for (var j = 0; j < 3; j++) {
-            nodes[i].pivots[j] = nodes[i].getPortPosition(j);
+            nodesArray[i].pivots[j] = nodes[i].getPortPosition(j);
         } 
     }  
 }
@@ -344,7 +428,7 @@ function drawInitialNode(context) {
     }
     
     context.beginPath();
-    context.arc(initialNode.position.x, initialNode.position.y, 5, 0, 2 * Math.PI);
+    context.arc(nodes[0].position.x, nodes[0].position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
 }
@@ -352,12 +436,18 @@ function drawInitialNode(context) {
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
 
-    if (node.label == 2) {
-        context.strokeStyle = 'blue';
-    } else {
-        context.strokeStyle = 'black'; 
-    }  
+    if (node.id === 0) {
+        drawInitialNode(context);
+        return;
+    }
 
+    if (node.label === 2) { // draws a black dot inside the triangle
+        context.beginPath();
+        context.arc(node.position.x, node.position.y, 3, 0, 2 * Math.PI);
+        context.fill();
+        context.stroke();
+    }
+    
     if (elementSelected) {
         // Highlight the selected element
         if (elementSelected[1] === node && elementSelected[0] === "node") {
@@ -400,8 +490,8 @@ function drawElements(context, node) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
-            var portToConnectPivot = initialNode.position;
-            var portToConnectPosition = initialNode.position;
+            var portToConnectPivot = nodes[0].position;
+            var portToConnectPosition = nodes[0].position;
         }
         // Updates the pivot position
         // node.pivots[i] = add([node.pivots[i].x, node.pivots[i].y], [node.position.x, node.position.y]);
