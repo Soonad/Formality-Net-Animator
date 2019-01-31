@@ -18,7 +18,6 @@ class Node {
 
 }
 
-
 // Size for canvas element
 const height = 400;
 const width = 400;
@@ -166,8 +165,19 @@ function keysPressed(e) {
         case (93):
             ctrlPressed = true;
         break;
-        case (32): // space bar
+        case (32): // space bar: 
+            // add a new keyframe, registering all the data associated with the nodes
             keyframes.push(copyNodes());
+            console.log("adding keyframe");
+            console.log(keyframes);
+        break;
+        case (80): // letter p
+            // plays an animation to change keyframes 
+            animateKeyframe();
+        break;
+        case (68): // letter d
+            // load the next keyframe
+            increaseKeyframe();
         break;
     }
 }
@@ -210,6 +220,44 @@ function copyNodes() {
 
     return copy;
 }
+
+var currentKeyframe = 0;
+// -- Animation -- 
+function animateKeyframe() {
+    // nodes = keyframes[0]; // start the positions from the beginning
+    // TODO: does an automatic animation?
+
+    // if (keyframes.length > 1) {
+    //     for (var i = 1; i < keyframes.length; i++) { // keyframe
+    //         for (var j = 0; j < keyframes[i].length; j++) { // copy of nodes
+    //             nodes[j].position = keyframes[i + 1][j].position; // receives the previous position
+    //             nodes[j].angle = keyframes[i + 1][j].angle;
+    //             updatePivotsPosition(nodes[j]);
+    //         }
+    //     }
+    // }
+
+}
+
+// TODO: having problem with undefined for "keyframes[currentKeyframe].length"
+function increaseKeyframe() {
+    console.log("Icrease key frame");
+    console.log(currentKeyframe);
+    console.log(keyframes);
+    if (keyframes.length > 1 && currentKeyframe < keyframes.length) {
+        for (var j = 0; j < keyframes[currentKeyframe].length; j++) { // copy of nodes       
+            nodes[j].position = keyframes[currentKeyframe][j].position; // receives the previous position
+            nodes[j].angle = keyframes[currentKeyframe][j].angle;
+            updatePivotsPosition(nodes[j]);
+            currentKeyframe++;
+        }
+    }
+}
+
+
+
+
+
 
 // -- Transformation -- 
 /*
