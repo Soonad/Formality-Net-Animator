@@ -34,6 +34,7 @@ var elementClicked = null;
 var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for elements moving. Does not identifies which objects move, only the position
 
 var selectionColor = 'green';
+var nodeIdCounter = 0;
 
 // Nodes
 // var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
@@ -167,11 +168,6 @@ function keysPressed(e) {
         break;
         case (32): // space bar
             keyframes.push(copyNodes());
-            console.log("Keyframe:");
-            console.log(keyframes);
-            console.log("node:");
-            console.log(nodes);
-            // console.log("Node 0 in nodes: "+nodes[0].position.x); 
         break;
     }
 }
@@ -185,10 +181,63 @@ function copyNodes() {
     for (var i = 0; i < nodes.length; i++) {
         var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
         node.id = nodes[i].id;
-        node.ports = nodes[i].ports;
         copy.push(node);
     }
+    for (var i = 0; i < nodes.length; i++) {
+        // console.log("Filtering nodes: ");
+        // console.log(nodes.filter(node => (copy[i].id === nodes[i].ports[0][0].id)));
+
+        // var nodeForPort0 = nodes.filter(node => (node.id === nodes[i].ports[0][0].id));
+        // var port0connectsOnPort = nodeForPort0.ports[0][1];
+
+        // var nodeForPort1 = nodes.filter(node => node.id === nodes[i].ports[1][0].id);
+        // var port1connectsOnPort = nodeForPort0.ports[1][1];
+
+        // var nodeForPort2 = nodes.filter(node => node.id === nodes[i].ports[2][0].id);
+        // var port2connectsOnPort = nodeForPort0.ports[2][1];
+
+        // copy[i].ports = [[nodeForPort0, port0connectsOnPort], [nodeForPort1, port1connectsOnPort], [nodeForPort2, port2connectsOnPort]];
+    }
+
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = 0; j < nodes.length; j++) {
+            if (nodes[i].ports[0][0].id === copy[j].id) {
+                var nodeForPort0 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[0] = [nodeForPort0, connectingOnPort];
+                // console.log("Copy of node "+i+"port 0:");
+                // console.log(copy[i].ports[0][0]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+
+            if (nodes[i].ports[1][0].id === copy[j].id) {
+                var nodeForPort1 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[1] = [nodeForPort1, connectingOnPort];
+                // console.log("Found node for port 1");
+                // console.log(copy[j]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+
+            if (nodes[i].ports[2][0].id === copy[j].id) {
+                var nodeForPort2 = copy[j];
+                var connectingOnPort = nodes[i].ports[0][1];
+                copy[i].ports[2] = [nodeForPort2, connectingOnPort];
+                // console.log("Found node for port 2");
+                // console.log(copy[j]);
+                // console.log("Connecting on the port: "+ nodes[i].ports[0][1]);
+            }
+        }
+    }
     setInitialPositionForPivots(copy);
+    console.log("Nodes");
+    console.log(nodes);
+    console.log("> Keyframes");
+    console.log(keyframes);
+    console.log(">>> Copy");
+    console.log(copy);
+
+    
     return copy;
 }
 
@@ -201,7 +250,8 @@ function copyNodes() {
 function checkTransformation(node) {
     var pairToTransform = node.ports[0][0]; // get the node that the current node is connecting on port 0
     
-    if (pairToTransform.ports[0][0] === node) { // check if the other node on port 0 is equal to the current node
+    if (pairToTransform.ports[0][0] === node && // check if the other node on port 0 is equal to the current node
+        (node !== nodes[0] && pairToTransform !== nodes[0])) { // initial node don't reduce
         if (node.label === pairToTransform.label) { // reduction
             reduceNodes(node, pairToTransform);
         } else { // duplication
@@ -235,10 +285,15 @@ function duplicateNodes(nodeA, nodeB) {
     var yPositionUp = nodeA.position.y;
     var yPositionDown = nodeA.position.y + (nodeA.radius * 2.5);
 
-    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());
+    var nodeA_leftUp = new Node(nodeA.label, {x: xPositionLeft, y: yPositionUp}, getRadianFromAngle());   
     var nodeA_rightUp = new Node(nodeA.label, {x: xPositionRight, y: yPositionUp}, getRadianFromAngle());
     var nodeB_leftDown = new Node(nodeB.label, {x: xPositionLeft, y: yPositionDown}, getRadianFromAngle(90));
     var nodeB_rightDown = new Node(nodeB.label, {x: xPositionRight, y: yPositionDown}, getRadianFromAngle(90));
+
+    nodeA_leftUp.id = nodeIdCounter++;
+    nodeA_rightUp.id = nodeIdCounter++;
+    nodeB_leftDown.id = nodeIdCounter++;
+    nodeB_rightDown.id = nodeIdCounter++;
 
     nodes.push(nodeA_leftUp);
     nodes.push(nodeA_rightUp);
@@ -289,7 +344,7 @@ function makeNodes() {
     nodes.push(node4);
 
     for (var i = 0; i < nodes.length; i++) {
-        nodes[i].id = i;
+        nodes[i].id = nodeIdCounter++;
     }
 
     // Connections between ports
