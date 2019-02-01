@@ -249,13 +249,13 @@ function copyNodes(nodes) {
             // Set infos for port 1
             if (nodes[i].ports[1][0].id === copy[j].id) {
                 var nodeForPort1 = copy[j];
-                var connectingOnPort = nodes[i].ports[0][1];
+                var connectingOnPort = nodes[i].ports[1][1];
                 copy[i].ports[1] = [nodeForPort1, connectingOnPort];
             }
             // Set infos for port 2
             if (nodes[i].ports[2][0].id === copy[j].id) {
                 var nodeForPort2 = copy[j];
-                var connectingOnPort = nodes[i].ports[0][1];
+                var connectingOnPort = nodes[i].ports[2][1];
                 copy[i].ports[2] = [nodeForPort2, connectingOnPort];
             }
         }
