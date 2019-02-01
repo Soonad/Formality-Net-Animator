@@ -75,11 +75,11 @@ window.onload = function() {
                     animNodes[i].position = {x: ax+(bx-ax)*t, y: ay+(by-ay)*t};
                     animNodes[i].angle = aa + (ba - aa) * t;
 
-                    // for (var j = 0; j < 3; j++) {
-                    //     var {x: ax, y: ay} = nodesA[i].pivots[j];
-                    //     var {x: bx, y: by} = nodesB[i].pivots[j];
-                    //     animNodes.pivots[j] = {x: ax+(bx-ax)*t, y: ay+(by-ay)*t};
-                    // }
+                    for (var j = 0; j < 3; j++) {
+                        var {x: pax, y: pay} = nodesA[i].pivots[j];
+                        var {x: pbx, y: pby} = nodesB[i].pivots[j];
+                        animNodes[i].pivots[j] = {x: pax+(pbx-pax)*t, y: pay+(pby-pay)*t};
+                    }
                 }
             }
             for (var i = 0; i < animNodes.length; i++) {    
@@ -91,8 +91,7 @@ window.onload = function() {
             };
         }
 
-    // }, 1000/30);
-    }, 1000/10);
+    }, 1000/30);
 
     
     // -- Rotation -- 
@@ -173,6 +172,7 @@ window.onload = function() {
 window.addEventListener("keydown", keysPressed, false);
 
 var ctrlPressed = false;
+var hidePivots = false;
 
 function keysPressed(e) {
     var key = e.keyCode;
@@ -204,7 +204,6 @@ function keysPressed(e) {
             // add a new keyframe, registering all the data associated with the nodes
             keyframes.push(copyNodes(nodes));
             console.log("adding keyframe");
-            console.log(keyframes);
         break;
         case (80): // letter p
             // plays an animation to change keyframes 
@@ -214,6 +213,11 @@ function keysPressed(e) {
             // load the next keyframe
             increaseKeyframe();
         break;
+        case (72): // letter h
+            // hide and show the pivots
+            hidePivots = !hidePivots;
+        break;
+
     }
 }
 
@@ -222,9 +226,6 @@ function keysReleased(e) {
 }
 
 function copyNodes(nodes) {
-    console.log(">>> Copy nodes");
-    console.log("nodes before copy node");
-    console.log(nodes);
     var copy = [];
     // Create a copy of nodes
     for (var i = 0; i < nodes.length; i++) {
@@ -260,8 +261,6 @@ function copyNodes(nodes) {
             }
         }
     }
-    // console.log("nodes after copy node");
-    // console.log(copy);
     return copy;
 }
 
@@ -472,6 +471,9 @@ function drawInitialNode(context) {
 
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
+    context.strokeStyle = 'black';
+    context.fillStyle = 'black'; 
+
     if (node.id === 0) {
         drawInitialNode(context);
         return;
@@ -549,10 +551,13 @@ function drawElements(context, node) {
             }
         }
         // Shows the position of the pivots
-        context.beginPath();
-        context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
-        context.fill();
-        context.stroke();
+        if (!hidePivots) {
+            context.beginPath();
+            context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
+            context.fill();
+            context.stroke();
+        }
+        
     }
 }
 
