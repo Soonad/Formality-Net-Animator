@@ -278,7 +278,7 @@ function animateKeyframe() {
 
 function increaseKeyframe() {
     currentKeyframe = (currentKeyframe + 1) % keyframes.length;
-    nodes = keyframes[0];
+    nodes = keyframes[currentKeyframe];
 }
 
 
