@@ -191,6 +191,10 @@ function copyNodes() {
     for (var i = 0; i < nodes.length; i++) {
         var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
         node.id = nodes[i].id;
+        // node.pivots = nodes[i].pivots;
+        node.pivots[0] = {x: nodes[i].pivots[0].x, y: nodes[i].pivots[0].y};
+        node.pivots[1] = {x: nodes[i].pivots[1].x, y: nodes[i].pivots[1].y};
+        node.pivots[2] = {x: nodes[i].pivots[2].x, y: nodes[i].pivots[2].y};
         copy.push(node);
     }
 
@@ -216,7 +220,7 @@ function copyNodes() {
             }
         }
     }
-    setInitialPositionForPivots(copy);
+    // setInitialPositionForPivots(copy);
 
     return copy;
 }
@@ -227,16 +231,6 @@ function animateKeyframe() {
     // nodes = keyframes[0]; // start the positions from the beginning
     // TODO: does an automatic animation?
 
-    // if (keyframes.length > 1) {
-    //     for (var i = 1; i < keyframes.length; i++) { // keyframe
-    //         for (var j = 0; j < keyframes[i].length; j++) { // copy of nodes
-    //             nodes[j].position = keyframes[i + 1][j].position; // receives the previous position
-    //             nodes[j].angle = keyframes[i + 1][j].angle;
-    //             updatePivotsPosition(nodes[j]);
-    //         }
-    //     }
-    // }
-
 }
 
 // TODO: having problem with undefined for "keyframes[currentKeyframe].length"
@@ -245,8 +239,7 @@ function increaseKeyframe() {
         for (var j = 0; j < keyframes[currentKeyframe].length; j++) { // copy of nodes       
             nodes[j].position = keyframes[currentKeyframe][j].position; // receives the previous position
             nodes[j].angle = keyframes[currentKeyframe][j].angle;
-            nodes[j].pivots = keyframes[currentKeyframe][j].keyframes;
-            updatePivotsPosition(nodes[j]);   
+            nodes[j].pivots = keyframes[currentKeyframe][j].pivots;
         }
         currentKeyframe++;
     }
@@ -509,9 +502,7 @@ function drawElements(context, node) {
             var portToConnectPivot = nodes[0].position;
             var portToConnectPosition = nodes[0].position;
         }
-        // Updates the pivot position
-        // node.pivots[i] = add([node.pivots[i].x, node.pivots[i].y], [node.position.x, node.position.y]);
-    
+       
         // -- Drawing pivots and lines -- 
         context.strokeStyle = 'black';
         context.fillStyle = 'black'; 
@@ -532,7 +523,7 @@ function drawElements(context, node) {
         }
         // Shows the position of the pivots
         context.beginPath();
-        context.arc(node.pivots[i].x, node.pivots[i].y, 3, 0, 2 * Math.PI);
+        context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
         context.fill();
         context.stroke();
     }
