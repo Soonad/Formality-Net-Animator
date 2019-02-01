@@ -35,6 +35,8 @@ var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for
 var selectionColor = 'green';
 var nodeIdCounter = 0;
 
+var animate = null;
+
 // Nodes
 // var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
 // initialNode.id = 00;
@@ -48,15 +50,40 @@ window.onload = function() {
     var context = canvas.getContext("2d"); 
     
     setInitialPositionForPivots(nodes);
-    keyframes.push(copyNodes());
+    keyframes.push(copyNodes(nodes));
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
-        context.clearRect(0, 0, canvas.width, canvas.height);   
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
-        for (var i = 0; i < nodes.length; i++) {    
-            drawElements(context, nodes[i]); 
-        };
+        if (animate) {
+            var animKeyframe = (currentKeyframe + ((Date.now() - animate) / 1000)) % keyframes.length;
+
+            var nodesA = keyframes[Math.floor(animKeyframe)];
+            var nodesB = keyframes[Math.floor(animKeyframe + 1) % keyframes.length];
+            var animNodes = copyNodes(nodesA);
+            if (nodesA.length === nodesB.length) {
+                for (var i = 0; i < animNodes.length; ++i) {
+                    var t = animKeyframe % 1;
+                    var {x: ax, y: ay} = nodesA[i].position;
+                    var {x: bx, y: by} = nodesB[i].position;
+                    var aa = nodesA[i].angle;
+                    var ba = nodesB[i].angle;
+                    animNodes[i].position = {x: ax+(bx-ax)*t, y: ay+(by-ay)*t};
+                    animNodes[i].angle = aa + (ba - aa) * t;
+                }
+            }
+
+            console.log(animNodes.length)
+            for (var i = 0; i < animNodes.length; i++) {    
+                drawElements(context, animNodes[i]); 
+            };
+        } else {
+            for (var i = 0; i < nodes.length; i++) {    
+                drawElements(context, nodes[i]); 
+            };
+        }
+
 
     }, 1000/30);
     
@@ -167,7 +194,7 @@ function keysPressed(e) {
         break;
         case (32): // space bar: 
             // add a new keyframe, registering all the data associated with the nodes
-            keyframes.push(copyNodes());
+            keyframes.push(copyNodes(nodes));
             console.log("adding keyframe");
             console.log(keyframes);
         break;
@@ -186,12 +213,12 @@ function keysReleased(e) {
     ctrlPressed = false
 }
 
-function copyNodes() {
+function copyNodes(nodes) {
+
     var copy = [];
     for (var i = 0; i < nodes.length; i++) {
         var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
         node.id = nodes[i].id;
-        // node.pivots = nodes[i].pivots;
         node.pivots[0] = {x: nodes[i].pivots[0].x, y: nodes[i].pivots[0].y};
         node.pivots[1] = {x: nodes[i].pivots[1].x, y: nodes[i].pivots[1].y};
         node.pivots[2] = {x: nodes[i].pivots[2].x, y: nodes[i].pivots[2].y};
@@ -230,20 +257,19 @@ var currentKeyframe = 0;
 function animateKeyframe() {
     // nodes = keyframes[0]; // start the positions from the beginning
     // TODO: does an automatic animation?
-
-}
-
-// TODO: having problem with undefined for "keyframes[currentKeyframe].length"
-function increaseKeyframe() {
-    if (keyframes.length > 1 && currentKeyframe < keyframes.length) {
-        for (var j = 0; j < keyframes[currentKeyframe].length; j++) { // copy of nodes       
-            nodes[j].position = keyframes[currentKeyframe][j].position; // receives the previous position
-            nodes[j].angle = keyframes[currentKeyframe][j].angle;
-            nodes[j].pivots = keyframes[currentKeyframe][j].pivots;
-        }
-        currentKeyframe++;
+    if (animate) {
+        animate = null;
+    } else {
+        animate = Date.now();
     }
+    console.log("animate", animate);
 }
+
+function increaseKeyframe() {
+    currentKeyframe = (currentKeyframe + 1) % keyframes.length;
+    nodes = keyframes[currentKeyframe];
+}
+
 
 
 
@@ -444,7 +470,6 @@ function drawInitialNode(context) {
 
 // Draw the shape of a triangle according to it's ports and it's connections
 function drawElements(context, node) {
-
     if (node.id === 0) {
         drawInitialNode(context);
         return;
