@@ -50,6 +50,7 @@ window.onload = function() {
     var context = canvas.getContext("2d"); 
     
     setInitialPositionForPivots(nodes);
+    // keyframes 0: a copy of the original nodes
     keyframes.push(copyNodes(nodes));
 
     // Calls a function or evaluates an expression at specified intervals
@@ -58,11 +59,13 @@ window.onload = function() {
 
         if (animate) {
             var animKeyframe = (currentKeyframe + ((Date.now() - animate) / 1000)) % keyframes.length;
-
             var nodesA = keyframes[Math.floor(animKeyframe)];
             var nodesB = keyframes[Math.floor(animKeyframe + 1) % keyframes.length];
             var animNodes = copyNodes(nodesA);
+
+            // There was no reduction or duplication
             if (nodesA.length === nodesB.length) {
+                // updates position, angle and pivots of a node
                 for (var i = 0; i < animNodes.length; ++i) {
                     var t = animKeyframe % 1;
                     var {x: ax, y: ay} = nodesA[i].position;
@@ -71,10 +74,14 @@ window.onload = function() {
                     var ba = nodesB[i].angle;
                     animNodes[i].position = {x: ax+(bx-ax)*t, y: ay+(by-ay)*t};
                     animNodes[i].angle = aa + (ba - aa) * t;
+
+                    // for (var j = 0; j < 3; j++) {
+                    //     var {x: ax, y: ay} = nodesA[i].pivots[j];
+                    //     var {x: bx, y: by} = nodesB[i].pivots[j];
+                    //     animNodes.pivots[j] = {x: ax+(bx-ax)*t, y: ay+(by-ay)*t};
+                    // }
                 }
             }
-
-            console.log(animNodes.length)
             for (var i = 0; i < animNodes.length; i++) {    
                 drawElements(context, animNodes[i]); 
             };
@@ -84,8 +91,9 @@ window.onload = function() {
             };
         }
 
+    // }, 1000/30);
+    }, 1000/10);
 
-    }, 1000/30);
     
     // -- Rotation -- 
     canvas.onclick = function(e) {
@@ -214,8 +222,11 @@ function keysReleased(e) {
 }
 
 function copyNodes(nodes) {
-
+    console.log(">>> Copy nodes");
+    console.log("nodes before copy node");
+    console.log(nodes);
     var copy = [];
+    // Create a copy of nodes
     for (var i = 0; i < nodes.length; i++) {
         var node = new Node(nodes[i].label, nodes[i].position, nodes[i].angle);
         node.id = nodes[i].id;
@@ -224,15 +235,17 @@ function copyNodes(nodes) {
         node.pivots[2] = {x: nodes[i].pivots[2].x, y: nodes[i].pivots[2].y};
         copy.push(node);
     }
-
-    for (var i = 0; i < nodes.length; i++) {
-        for (var j = 0; j < nodes.length; j++) {
+    // Setup the new ports references
+    for (var i = 0; i < copy.length; i++) { // in each node of nodes
+        for (var j = 0; j < copy.length; j++) { // search in the array of copies
+            // for the associated node for each port
             // Set infos for port 0
             if (nodes[i].ports[0][0].id === copy[j].id) {
                 var nodeForPort0 = copy[j];
                 var connectingOnPort = nodes[i].ports[0][1];
                 copy[i].ports[0] = [nodeForPort0, connectingOnPort];
             }
+            
             // Set infos for port 1
             if (nodes[i].ports[1][0].id === copy[j].id) {
                 var nodeForPort1 = copy[j];
@@ -247,32 +260,27 @@ function copyNodes(nodes) {
             }
         }
     }
-    // setInitialPositionForPivots(copy);
-
+    // console.log("nodes after copy node");
+    // console.log(copy);
     return copy;
 }
 
 var currentKeyframe = 0;
 // -- Animation -- 
+// Does an automatic animation from one keyframe to another
 function animateKeyframe() {
-    // nodes = keyframes[0]; // start the positions from the beginning
-    // TODO: does an automatic animation?
+    console.log(keyframes[1]);
     if (animate) {
         animate = null;
     } else {
         animate = Date.now();
     }
-    console.log("animate", animate);
 }
 
 function increaseKeyframe() {
     currentKeyframe = (currentKeyframe + 1) % keyframes.length;
-    nodes = keyframes[currentKeyframe];
+    nodes = keyframes[0];
 }
-
-
-
-
 
 
 
@@ -427,12 +435,6 @@ function connectPorts([nodeA, slotA], [nodeB, slotB]) {
     nodeA.ports[slotA] = [nodeB, slotB];
     nodeB.ports[slotB] = [nodeA, slotA];
 }
-
-function connectToInitialNode([nodeA, slotA]) {
-    nodeA.ports[slotA] = [initialNode, 0];
-    initialNode.ports[0] = [nodeA, slotA];
-}
-
 
 function setInitialPositionForPivots(nodesArray) { 
     for (var i = 0; i < nodesArray.length; i++) {
