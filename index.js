@@ -241,16 +241,14 @@ function animateKeyframe() {
 
 // TODO: having problem with undefined for "keyframes[currentKeyframe].length"
 function increaseKeyframe() {
-    console.log("Icrease key frame");
-    console.log(currentKeyframe);
-    console.log(keyframes);
     if (keyframes.length > 1 && currentKeyframe < keyframes.length) {
         for (var j = 0; j < keyframes[currentKeyframe].length; j++) { // copy of nodes       
             nodes[j].position = keyframes[currentKeyframe][j].position; // receives the previous position
             nodes[j].angle = keyframes[currentKeyframe][j].angle;
-            updatePivotsPosition(nodes[j]);
-            currentKeyframe++;
+            nodes[j].pivots = keyframes[currentKeyframe][j].keyframes;
+            updatePivotsPosition(nodes[j]);   
         }
+        currentKeyframe++;
     }
 }
 
