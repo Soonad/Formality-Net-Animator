@@ -124,24 +124,22 @@ window.onload = function() {
 
         // Check if the initial node was clicked
         var distanceFromInitialNode = getDistanceBetween([nodes[0].position.x, nodes[0].position.y], positionClicked);
-        if (distanceFromInitialNode <= maxRadiusDistance) {
-            elementSelected = ["initialNode"];
-        } else {
-            for (var i = 0; i < nodes.length; i++) {    
-                // Checks if any node was clicked 
-                var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
-                if (distanceFromNode <= maxRadiusDistance) {
-                    elementSelected = ["node", nodes[i]];
-                    prevPositionMovement.push(nodes[i].position);
-                }     
-                // Check if any pivot was clicked
-                for (var j = 0; j < 3; j++) {            
-                    var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
-                    if (distanceFromPivot <= maxRadiusDistance) {
-                        elementSelected = ["pivot", nodes[i], j];
-                    }
-                }  
-            }
+
+        for (var i = 0; i < nodes.length; i++) {    
+            // Checks if any node was clicked 
+            var distanceFromNode = getDistanceBetween([nodes[i].position.x, nodes[i].position.y], positionClicked);
+            if (distanceFromNode <= maxRadiusDistance) {
+                elementSelected = ["node", nodes[i]];
+                prevPositionMovement.push(nodes[i].position);
+                updatePivotsPosition(nodes[i]);
+            }     
+            // Check if any pivot was clicked
+            for (var j = 0; j < 3; j++) {            
+                var distanceFromPivot = getDistanceBetween([nodes[i].pivots[j].x, nodes[i].pivots[j].y], positionClicked);
+                if (distanceFromPivot <= maxRadiusDistance) {
+                    elementSelected = ["pivot", nodes[i], j];
+                }
+            }  
         }
 
     };
@@ -150,16 +148,14 @@ window.onload = function() {
         if (elementSelected) {
             var positionClicked = {x: e.offsetX, y: e.offsetY};
             var node = elementSelected[1];
-            // Check the type of the element selected
-            if (elementSelected[0] === "node") {
-                node.position = positionClicked
-                updatePivotsPosition(node);
-            } else if (elementSelected[0] === "pivot") {
+            // Check the type of the element selected   
+            if (elementSelected[0] === "pivot") {
                 var pivotPort = elementSelected[2];
                 node.pivots[pivotPort] = positionClicked;
             } else {
-                nodes[0].position = positionClicked;
-            }     
+                node.position = positionClicked
+                updatePivotsPosition(node);
+            }
         }  
     }
 
@@ -186,13 +182,12 @@ function keysPressed(e) {
                 elementClicked.angle = elementClicked.angle + getRadianFromAngle(5);
                 break;
             case (90): // ctr+z or cmd+z
-                elementMoving.pop(); // removes the actual position
+                prevPositionMovement.pop(); // removes the actual position
                 if (prevPositionMovement.length > 0) {
                     elementClicked.position = elementoMoving.pop();
                 } 
                 break;
         }
-        updatePivotsPosition(elementClicked);
     }
 
     switch (key) {
@@ -217,6 +212,13 @@ function keysPressed(e) {
             // hide and show the pivots
             hidePivots = !hidePivots;
         break;
+        case (88): // letter x
+            if (keyframes.length > 1) {
+                keyframes.pop();
+                nodes = keyframes[keyframes.length - 1];
+            }          
+        break;
+
 
     }
 }
@@ -268,7 +270,6 @@ var currentKeyframe = 0;
 // -- Animation -- 
 // Does an automatic animation from one keyframe to another
 function animateKeyframe() {
-    console.log(keyframes[1]);
     if (animate) {
         animate = null;
     } else {
@@ -452,7 +453,7 @@ function updatePivotsPosition(node) {
 
 // ----- Drawing ------
 // Draw the initial node as a small circle
-function drawInitialNode(context) {
+function drawInitialNode(context, node) {
     if (elementSelected) {
         if (elementSelected[0] === "initialNode") {
             context.fillStyle = selectionColor;
@@ -464,7 +465,7 @@ function drawInitialNode(context) {
     }
     
     context.beginPath();
-    context.arc(nodes[0].position.x, nodes[0].position.y, 5, 0, 2 * Math.PI);
+    context.arc(node.position.x, node.position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
 }
@@ -473,11 +474,6 @@ function drawInitialNode(context) {
 function drawElements(context, node) {
     context.strokeStyle = 'black';
     context.fillStyle = 'black'; 
-
-    if (node.id === 0) {
-        drawInitialNode(context);
-        return;
-    }
 
     if (node.label === 2) { // draws a black dot inside the triangle
         context.beginPath();
@@ -498,25 +494,28 @@ function drawElements(context, node) {
         }
     }
 
-    // -- Triangles --
-    context.beginPath();
-    // Port 0 to 1
-    context.moveTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
-    context.lineTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
-    
-    // Port 1 to 2
-    context.moveTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
-    context.bezierCurveTo(node.getPortPosition(1).x, node.getPortPosition(1).y, 
-                            node.position.x, node.position.y, 
-                            node.getPortPosition(2).x, node.getPortPosition(2).y);
+    if (node.id === 0) {
+        drawInitialNode(context, node);
+    } else {
+        // -- Triangles --
+        context.beginPath();
+        // Port 0 to 1
+        context.moveTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
+        context.lineTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
+        
+        // Port 1 to 2
+        context.moveTo(node.getPortPosition(1).x, node.getPortPosition(1).y);
+        context.bezierCurveTo(node.getPortPosition(1).x, node.getPortPosition(1).y, 
+                                node.position.x, node.position.y, 
+                                node.getPortPosition(2).x, node.getPortPosition(2).y);
 
-    // Port 2 to 0
-    context.moveTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
-    context.lineTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
+        // Port 2 to 0
+        context.moveTo(node.getPortPosition(2).x, node.getPortPosition(2).y);
+        context.lineTo(node.getPortPosition(0).x, node.getPortPosition(0).y);
 
-    context.closePath();
-    context.stroke(); 
-
+        context.closePath();
+        context.stroke(); 
+    }
     // node.ports has the format of: [[node0, 0], [node1, 1], [node2, 2]]
     for (var i = 0; i < 3; i++) {
         var portPosition = node.getPortPosition(i);
@@ -535,13 +534,15 @@ function drawElements(context, node) {
         // -- Drawing pivots and lines -- 
         context.strokeStyle = 'black';
         context.fillStyle = 'black'; 
-        // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
-        context.beginPath();
-        context.moveTo(portPosition.x, portPosition.y);
-        context.bezierCurveTo(portPivot.x, portPivot.y, 
-                            portToConnectPivot.x, portToConnectPivot.y,
-                            portToConnectPosition.x, portToConnectPosition.y);
-        context.stroke(); 
+        if (node.id !== 0) {
+            // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
+            context.beginPath();
+            context.moveTo(portPosition.x, portPosition.y);
+            context.bezierCurveTo(portPivot.x, portPivot.y, 
+                                portToConnectPivot.x, portToConnectPivot.y,
+                                portToConnectPosition.x, portToConnectPosition.y);
+            context.stroke();
+        }
 
         // Highlight the selected pivot
         if (elementSelected) {
@@ -552,10 +553,12 @@ function drawElements(context, node) {
         }
         // Shows the position of the pivots
         if (!hidePivots) {
-            context.beginPath();
-            context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
-            context.fill();
-            context.stroke();
+            if (node.id !== 0){
+                context.beginPath();
+                context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
+                context.fill();
+                context.stroke();
+            }   
         }
         
     }
