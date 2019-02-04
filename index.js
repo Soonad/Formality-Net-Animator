@@ -112,7 +112,6 @@ window.onload = function() {
                 } 
             } 
         }
-
     }
     // -- Drag and drop actions --
     canvas.onmousedown = function(e) {
@@ -176,7 +175,7 @@ function keysPressed(e) {
     if (elementClicked) {
         switch (key) {
             case (37): // left
-                elementClicked.angle = elementClicked.angle - getRadianFromAngle(5) 
+                elementClicked.angle = elementClicked.angle - getRadianFromAngle(5);
                 break;
             case (39): // right
                 elementClicked.angle = elementClicked.angle + getRadianFromAngle(5);
@@ -463,8 +462,9 @@ function drawInitialNode(context, node) {
             context.strokeStyle = 'black';
         }
     }
-    
+    var port0Position = node.getPortPosition(0);
     context.beginPath();
+    // context.arc(port0Position.x, port0Position.y, 5, 0, 2 * Math.PI);
     context.arc(node.position.x, node.position.y, 5, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
@@ -527,8 +527,8 @@ function drawElements(context, node) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
-            var portToConnectPivot = nodes[0].position;
-            var portToConnectPosition = nodes[0].position;
+            var portToConnectPivot = nodeToConnect.position;
+            var portToConnectPosition = nodeToConnect.position;
         }
        
         // -- Drawing pivots and lines -- 
@@ -553,7 +553,7 @@ function drawElements(context, node) {
         }
         // Shows the position of the pivots
         if (!hidePivots) {
-            if (node.id !== 0){
+            if (node.id !== 0) { // Initial node does not shows the pivots
                 context.beginPath();
                 context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
                 context.fill();
