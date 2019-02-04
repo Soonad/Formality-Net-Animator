@@ -50,8 +50,6 @@ window.onload = function() {
     var context = canvas.getContext("2d"); 
     
     setInitialPositionForPivots(nodes);
-    // keyframes 0: a copy of the original nodes
-    keyframes.push(copyNodes(nodes));
 
     // Calls a function or evaluates an expression at specified intervals
     setInterval(() => {
