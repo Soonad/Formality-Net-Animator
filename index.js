@@ -108,11 +108,25 @@ function makeNodes() {
     return nodes;
 }
 
+function setupCanvas(canvas) {
+    var context = canvas.getContext("2d");
+    if (window.devicePixelRatio > 1) {
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
+
+        canvas.width = canvasWidth * window.devicePixelRatio;
+        canvas.height = canvasHeight * window.devicePixelRatio;
+        canvas.style.width = canvasWidth;
+        canvas.style.height = canvasHeight;
+        
+        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    return context;
+  }
 
 window.onload = function() {
     var canvas = document.getElementById("canvas");
-    var context = canvas.getContext("2d"); 
-    
+    var context =  setupCanvas(canvas);
     setInitialPositionForPivots(nodes);
 
     // Calls a function or evaluates an expression at specified intervals
