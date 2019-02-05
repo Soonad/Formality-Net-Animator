@@ -19,7 +19,7 @@ class Node {
 }
 
 // Size for canvas element
-const height = 600;
+const height = 500;
 const width = 500;
 /**
  * Represent a thing clicked. Can be of type Node or Pivot.
@@ -55,16 +55,16 @@ function makeNodes() {
     var nodes = [];
     var initialNode = new Node(0, {x: width * 0.25 - 15, y: height * 0.03}, getRadianFromAngle()); 
     var node0 = new Node(1, {x: width * 0.25, y: height * 0.10}, getRadianFromAngle(90));
-    var node1 = new Node(1, {x: width * 0.25, y: height * 0.25}, getRadianFromAngle());
-    var node2 = new Node(1, {x: width * 0.3, y: height * 0.40}, getRadianFromAngle());
+    var node1 = new Node(1, {x: width * 0.25, y: height * 0.22}, getRadianFromAngle());
+    var node2 = new Node(1, {x: width * 0.3, y: height * 0.37}, getRadianFromAngle());
     // -10 is to align an upside down node with the others
-    var node3 = new Node(1, {x: width * 0.35, y: height * 0.55}, getRadianFromAngle());
-    var node4 = new Node(1, {x: width * 0.45, y: height * 0.70 - 10}, getRadianFromAngle(90));
-    var node5 = new Node(1, {x: width * 0.5, y: height * 0.85 - 10}, getRadianFromAngle(90));
+    var node3 = new Node(1, {x: width * 0.35, y: height * 0.52}, getRadianFromAngle());
+    var node4 = new Node(1, {x: width * 0.45, y: height * 0.67 - 10}, getRadianFromAngle(90));
+    var node5 = new Node(1, {x: width * 0.5, y: height * 0.82 - 10}, getRadianFromAngle(90));
 
-    var node6 = new Node(1, {x: width * 0.5, y: height * 0.25}, getRadianFromAngle());
-    var node7 = new Node(1, {x: width * 0.55, y: height * 0.40}, getRadianFromAngle());
-    var node8 = new Node(5, {x: width * 0.53, y: height * 0.50}, getRadianFromAngle());
+    var node6 = new Node(1, {x: width * 0.5, y: height * 0.22}, getRadianFromAngle());
+    var node7 = new Node(1, {x: width * 0.55, y: height * 0.37}, getRadianFromAngle());
+    var node8 = new Node(5, {x: width * 0.53, y: height * 0.47}, getRadianFromAngle());
 
     nodes.push(initialNode);
     nodes.push(node0);
