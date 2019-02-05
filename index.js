@@ -40,10 +40,7 @@ var prevPositionMovement = []; // [{x: 0, y: 0}] Adds all previous positions for
 var selectionColor = 'green';
 var nodeIdCounter = 0;
 
-
 // Nodes
-// var initialNode = new Node(0, {x: width * 0.47 - 5, y: height * 0.05}, getRadianFromAngle());
-// initialNode.id = 00;
 var nodes = makeNodes();
 
 // An Node array recording the changes of the positions 
@@ -89,10 +86,25 @@ function makeNodes() {
     return nodes;
 }
 
+function setupCanvas(canvas) {
+    var context = canvas.getContext("2d");
+    if (window.devicePixelRatio > 1) {
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
+
+        canvas.width = canvasWidth * window.devicePixelRatio;
+        canvas.height = canvasHeight * window.devicePixelRatio;
+        canvas.style.width = canvasWidth;
+        canvas.style.height = canvasHeight;
+        
+        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    return context;
+  }
 
 window.onload = function() {
     var canvas = document.getElementById("canvas");
-    var context = canvas.getContext("2d"); 
+    var context = setupCanvas(canvas); 
     
     setInitialPositionForPivots(nodes);
 
@@ -342,7 +354,7 @@ function checkTransformation(node) {
         }
         // remove the current nodes from the array of nodes
         nodes = nodes.filter(aux_node => (aux_node !== node && aux_node !== pairToTransform));
-        setInitialPositionForPivots(nodes);
+        // setInitialPositionForPivots(nodes);
     }
 }
 
@@ -395,6 +407,7 @@ function duplicateNodes(nodeA, nodeB) {
 
     connectPorts([nodeB_leftDown, 0],[nodeA.ports[2][0], nodeA.ports[2][1]]);
     connectPorts([nodeB_rightDown, 0],[nodeA.ports[1][0], nodeA.ports[1][1]]);
+    setInitialPositionForPivots(nodes);
 }
 
 
