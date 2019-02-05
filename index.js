@@ -373,7 +373,6 @@ function checkTransformation(node) {
         }
         // remove the current nodes from the array of nodes
         nodes = nodes.filter(aux_node => (aux_node !== node && aux_node !== pairToTransform));
-        // setInitialPositionForPivots(nodes);
     }
 }
 
@@ -426,7 +425,6 @@ function duplicateNodes(nodeA, nodeB) {
 
     connectPorts([nodeB_leftDown, 0],[nodeA.ports[2][0], nodeA.ports[2][1]]);
     connectPorts([nodeB_rightDown, 0],[nodeA.ports[1][0], nodeA.ports[1][1]]);
-    setInitialPositionForPivots(nodes);
 }
 
 
