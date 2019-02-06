@@ -19,8 +19,8 @@ class Node {
 }
 
 // Size for canvas element
-const height = 400;
-const width = 400;
+const height = 500;
+const width = 500;
 /**
  * Represent a thing clicked. Can be of type Node or Pivot.
  * Type node: ["node", node]
@@ -460,7 +460,12 @@ function drawInitialNode(context, node) {
     context.beginPath();
     // context.arc(port0Position.x, port0Position.y, 5, 0, 2 * Math.PI);
     context.arc(node.position.x, node.position.y, 5, 0, 2 * Math.PI);
-    context.fill();
+    if (node.label === 0) {
+        context.fill();
+    } else {
+        context.fillStyle = 'white';
+        context.fill();
+    }
     context.stroke();
 }
 
@@ -492,7 +497,7 @@ function drawElements(context, node) {
         }
     }
 
-    if (node.id === 0) {
+    if (node.label === 0 || node.label === 5) {
         drawInitialNode(context, node);
     } else {
         // -- Triangles --
@@ -521,7 +526,7 @@ function drawElements(context, node) {
 
         var nodeToConnect = node.ports[i][0];
         var slotToConnect = node.ports[i][1];
-        if (nodeToConnect.label !== 0) {
+        if (nodeToConnect.label !== 0 && nodeToConnect.label !== 5) {
             var portToConnectPosition = nodeToConnect.getPortPosition(slotToConnect);
             var portToConnectPivot = nodeToConnect.pivots[slotToConnect];
         } else {
@@ -532,7 +537,7 @@ function drawElements(context, node) {
         // -- Drawing pivots and lines -- 
         context.strokeStyle = 'black';
         context.fillStyle = 'black'; 
-        if (node.id !== 0) {
+        if (node.label !== 0 && node.label !== 5) {
             // Create a line (curved, if it has a pivot) from the node beeing drawn and "nodeToConnect"
             context.beginPath();
             context.moveTo(portPosition.x, portPosition.y);
@@ -551,7 +556,7 @@ function drawElements(context, node) {
         }
         // Shows the position of the pivots
         if (!hidePivots) {
-            if (node.id !== 0) { // Initial node does not shows the pivots
+            if (node.label !== 0 && node.label !== 5) { // Initial node does not shows the pivots
                 context.beginPath();
                 context.arc(portPivot.x, portPivot.y, 3, 0, 2 * Math.PI);
                 context.fill();
