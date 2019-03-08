@@ -46,7 +46,7 @@ var nodes = makeNodes();
 // An Node array recording the changes of the positions 
 var keyframes = []; // [[node0, node1, node2..], [node0, node1, node2...] ...]
 
-
+// -------- Edit this code to create your net  ---------
 // Defines the properties of each node
 function makeNodes() {
     var nodes = [];
