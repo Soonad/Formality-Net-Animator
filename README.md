@@ -5,7 +5,8 @@ This tool is used to create an animation of the reduction process of interaction
 ## Usage
 > It's recommended have a sketch before defining the type and position of the nodes.
 
-Go to the root folder and run a local server. Open `http://localhost:8080` to visualize the canvas.
+1. Go to the root folder and run a local server. 
+2. Open `http://localhost:8080` to visualize the canvas.
 
 Edit function `makeNodes()` to setup nodes properties.
 We start creating an empty node's array, an initial node and the other nodes. 
@@ -29,7 +30,7 @@ After pushing the nodes into the array and identifing them, we have to connect t
     ...
 ```
 
-## Doing an animation 
+## Making an animation 
 - **Single click**: select an element
 - **Click and move**: updates an element position. Can be done in nodes and pivots. 
 - **Click and use arrow keys**: updates an element angle, makes a rotation
